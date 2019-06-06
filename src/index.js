@@ -7,7 +7,7 @@ const message = document.getElementById("message");
 
 async function getContent(sha) {
   const contentResponse = await fetch(
-    `http://localhost:8000/versions/hethaltingprobleem/${sha}/`
+    process.env.PUBLIC_URL + `/versions/hethaltingprobleem/${sha}.json`
   );
 
   if (!contentResponse.ok) {
@@ -108,7 +108,7 @@ class History {
 
 async function getHistory() {
   const commitsResponse = await fetch(
-    `http://localhost:8000/versions/hethaltingprobleem`
+    process.env.PUBLIC_URL + "/versions/hethaltingprobleem.json"
   );
   if (!commitsResponse.ok) {
     throw commitsResponse;
