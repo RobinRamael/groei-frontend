@@ -1,6 +1,6 @@
 async function getContent(sha) {
   const contentResponse = await fetch(
-    `http://localhost:8000/versions/hethaltingprobleem/${sha}/`
+    process.env.PUBLIC_URL + `/versions/hethaltingprobleem/${sha}.json`
   );
 
   if (!contentResponse.ok) {
