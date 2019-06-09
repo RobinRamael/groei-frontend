@@ -4,6 +4,13 @@ import { useSpring } from "react-use";
 import Slide from "./slide";
 import "./comment-box.css";
 
+function hashCode(s) {
+  return s.split("").reduce(function(a, b) {
+    a = (a << 5) - a + b.charCodeAt(0);
+    return a & a;
+  }, 0);
+}
+
 export default class HistoryView extends React.Component {
   constructor(props) {
     super(props);
@@ -19,11 +26,28 @@ export default class HistoryView extends React.Component {
   }
 
   render() {
+    let text = this.props.history.getCommit(this.state.currIdx);
+
+    let paragraphs;
+    if (text) {
+      paragraphs = text.split("\n\n");
+    } else {
+      paragraphs = [];
+    }
+
     if (!this.state.loading) {
       return (
         <div>
-          <p>{this.state.currIdx}</p>
-          <pre>{this.props.history.getCommit(this.state.currIdx)}</pre>
+          {paragraphs.map(paragraph => (
+            <p key={hashCode(paragraph)}>
+              {paragraph.split("\n").map(line => (
+                <React.Fragment key={hashCode(line)}>
+                  {line}
+                  <br />
+                </React.Fragment>
+              ))}
+            </p>
+          ))}
         </div>
       );
     } else {
