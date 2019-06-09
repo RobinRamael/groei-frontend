@@ -23,6 +23,17 @@ export default class HistoryView extends React.Component {
     this.props.history.currLoading.then(() =>
       this.setState({ loading: false })
     );
+    var intervalId = setInterval(this.timer.bind(this), 100);
+    // store intervalId in the state so it can be accessed later:
+    this.setState({ intervalId: intervalId });
+  }
+
+  componentWillUnmount() {
+    clearInterval(this.state.intervalId);
+  }
+
+  timer() {
+    this.nextSlide();
   }
 
   render() {
@@ -56,6 +67,7 @@ export default class HistoryView extends React.Component {
   }
 
   handleKeyDown(e) {
+    clearInterval(this.state.intervalId);
     if (e.keyCode === 39) {
       this.nextSlide();
     } else if (e.keyCode === 37) {
