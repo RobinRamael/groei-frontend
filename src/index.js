@@ -80,7 +80,7 @@ class History {
 
     console.log(this.lo);
     console.log(idx);
-    console.log(this.hi);
+    console.log("hi", this.hi);
 
     if (idx < this.lo) {
       console.log("moving down");
@@ -89,7 +89,7 @@ class History {
       this.pages[0] = null;
       this.lo = this.lo - this.pageSize;
       this.hi = this.hi - this.pageSize;
-    } else if (idx > this.hi) {
+    } else if (idx > 0 && idx >= this.hi) {
       console.log("moving up");
       this.pages[0] = this.pages[1];
       this.pages[1] = this.pages[2];
