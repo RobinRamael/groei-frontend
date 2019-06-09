@@ -33,7 +33,6 @@ class History {
   }
 
   ensurePageLoaded(pageNo, lo, hi) {
-    console.log("ensuring page", pageNo, lo, hi);
     this.pages[pageNo] = {};
     return Promise.all(
       this.commits.slice(lo, hi).map(async commit => {
@@ -72,25 +71,13 @@ class History {
   getCommit(idx) {
     this.possiblyPreparePages(idx);
 
-    console.log({
-      0: this.pages[0] != null,
-      1: this.pages[1] != null,
-      2: this.pages[2] != null
-    });
-
-    console.log(this.lo);
-    console.log(idx);
-    console.log("hi", this.hi);
-
     if (idx < this.lo) {
-      console.log("moving down");
       this.pages[2] = this.pages[1];
       this.pages[1] = this.pages[0];
       this.pages[0] = null;
       this.lo = this.lo - this.pageSize;
       this.hi = this.hi - this.pageSize;
     } else if (idx > 0 && idx >= this.hi) {
-      console.log("moving up");
       this.pages[0] = this.pages[1];
       this.pages[1] = this.pages[2];
       this.pages[2] = null;
