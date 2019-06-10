@@ -1,6 +1,142 @@
 import React from "react";
 import Loader from "react-loader-spinner";
 
+const JsDiff = require("diff");
+
+// {
+// console.log(part); return part.value
+//   .split("\n")
+//   .filter(part => part.removed)
+//   .map(parsInCurrPart => (
+//     <p className={part.added ? "green" : part.removed}>
+//       {parsInCurrPart}
+//     </p>
+//   ));
+// }
+//
+//
+const ADDED = 1;
+const REMOVED = 2;
+const UNCHANGED = 0;
+const PAR_SEP = "\n\n";
+const LINE_SEP = "\n";
+
+function partStatus(part) {
+  return part.added ? "added" : part.removed ? "removed" : "";
+}
+
+function splitOnFirst(s, sep) {
+  let sepIndex = s.indexOf(sep);
+
+  if (sepIndex === -1) {
+    return [s, ""];
+  } else {
+    return [s.substring(0, sepIndex), s.substring(sepIndex + sep.length)];
+  }
+}
+
+function splitOnLast(s, sep) {
+  let sepIndex = s.lastIndexOf(sep);
+
+  if (sepIndex === -1) {
+    return [s, ""];
+  } else {
+    return [s.substring(0, sepIndex), s.substring(sepIndex + sep.length)];
+  }
+}
+
+function treeDiff(diff) {
+  let tree = [];
+  let currPar = [];
+  let currLine = [];
+
+  diff.forEach(part => {
+    var text = part.value.replace(/\n *\n/g, "\n\n");
+
+    let [firstLineTail, partWithoutFirstLine] = splitOnFirst(text, "\n");
+
+    currLine.push({ content: firstLineTail, status: partStatus(part) });
+
+    if (!partWithoutFirstLine) {
+      return;
+    }
+    // if this is the end of the line not, the end of the part
+    currPar.push(currLine);
+    currLine = []; // close the line
+
+    let [firstParagraphTail, restOfPart] = splitOnFirst(
+      partWithoutFirstLine,
+      "\n\n"
+    );
+
+    firstParagraphTail
+      .split("\n")
+      .filter(s => s)
+      .forEach(line =>
+        currPar.push([{ content: line, status: partStatus(part) }])
+      );
+
+    if (!restOfPart) {
+      return;
+    }
+
+    // if this is the end of the par, not the end of the part
+    tree.push(currPar);
+    currPar = []; // close the par
+
+    let [middleParagraphs, tailParagraphHead] = splitOnLast(restOfPart, "\n\n");
+
+    // add the middle
+    middleParagraphs.split("\n\n").forEach(par => {
+      let splitPar = par
+        .split("\n")
+        .filter(s => s)
+        .map(line => [{ content: line, status: partStatus(part) }]);
+
+      tree.push(splitPar);
+    });
+
+    let [lastParagraphFirstLines, lastLinePart] = splitOnLast(
+      tailParagraphHead,
+      "\n"
+    );
+
+    lastParagraphFirstLines
+      .split("\n")
+      .filter(s => s)
+      .forEach(line =>
+        currPar.push([{ content: line, status: partStatus(part) }])
+      );
+
+    currLine.push({ content: lastLinePart, status: partStatus(part) });
+  });
+
+  currPar.push(currLine);
+  tree.push(currPar);
+  return tree;
+}
+
+function DiffViewer(props) {
+  let diffTree = treeDiff(props.diff);
+
+  return (
+    <div className="container">
+      {diffTree.map((par, i) => (
+        <p>
+          {par.map(line => (
+            <React.Fragment>
+              {line.map(hunk => (
+                <span class={hunk.status}> {hunk.content} </span>
+              ))}
+              <br />
+            </React.Fragment>
+          ))}
+        </p>
+      ))}
+    </div>
+  );
+}
+
 function PageDbg(props) {
   return (
     <div>
@@ -11,11 +147,14 @@ function PageDbg(props) {
     </div>
   );
 }
-
 export default class HistoryView extends React.Component {
   constructor(props) {
     super(props);
-    this.state = { currIdx: this.props.startAt, loading: true };
+    this.state = {
+      currIdx: this.props.startAt,
+      loading: true,
+      goingForward: true
+    };
     this.handleKeyDown = this.handleKeyDown.bind(this);
   }
 
@@ -39,29 +178,20 @@ export default class HistoryView extends React.Component {
   }
 
   renderText() {
-    let text = this.props.history.getCommit(this.state.currIdx);
-
-    let paragraphs;
-    if (text) {
-      paragraphs = text.split("\n\n");
+    let from, to;
+    if (this.state.goingForward) {
+      if (this.state.currIdx === 0) {
+        from = "";
+      } else {
+        from = this.props.history.getCommit(this.state.currIdx - 1);
+      }
+      to = this.props.history.getCommit(this.state.currIdx);
     } else {
-      paragraphs = [];
+      to = this.props.history.getCommit(this.state.currIdx);
+      from = this.props.history.getCommit(this.state.currIdx + 1);
     }
 
-    return (
-      <div>
-        {paragraphs.map(paragraph => (
-          <p>
-            {paragraph.split("\n").map(line => (
-              <React.Fragment>
-                {line}
-                <br />
-              </React.Fragment>
-            ))}
-          </p>
-        ))}
-      </div>
-    );
+    return <DiffViewer diff={JsDiff.diffWords(from.trim(), to.trim())} />;
   }
 
   render() {
@@ -100,7 +230,7 @@ export default class HistoryView extends React.Component {
 
   previousSlide() {
     if (this.state.currIdx > 0) {
-      this.setState({ currIdx: this.state.currIdx - 1 });
+      this.setState({ currIdx: this.state.currIdx - 1, goingForward: false });
     }
   }
 

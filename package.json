@@ -8,6 +8,7 @@
     "react": "^16.8.0-alpha.1",
     "react-dom": "^16.8.0-alpha.1",
     "react-loader-spinner": "^2.3.0",
+    "react-proptypes": "^1.0.0",
     "react-scripts": "2.1.3",
     "react-simple-loader": "^1.0.0",
     "react-use": "^5.2.2"
