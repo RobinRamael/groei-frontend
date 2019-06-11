@@ -1,7 +1,3 @@
-import { getLanguage, getLanguageDependencies } from "./language-detector";
-
-// const [repo, sha, path] = getParams();
-// const lang = getLanguage(path);
 const root = document.getElementById("root");
 const message = document.getElementById("message");
 
@@ -18,78 +14,131 @@ async function getContent(sha) {
   return contentJson.content;
 }
 
+class HistoryPage {
+  constructor(commits, start, pageSize) {
+    this.commits = commits || [];
+    this.start = start;
+    this.pageSize = pageSize;
+
+    this.loading = false;
+    this.ready = false;
+    this.content = {};
+  }
+
+  load() {
+    if (this.loading || this.ready) {
+      return;
+    }
+
+    this.loading = true;
+    this.content = {};
+
+    let shasToLoad =
+      this.start >= 0
+        ? this.commits
+            .slice(this.start, this.start + this.pageSize)
+            .map(ci => ci.sha)
+        : [];
+
+    return Promise.all(
+      shasToLoad.map(async sha => {
+        this.content[sha] = await getContent(sha);
+      })
+    ).then(() => {
+      this.ready = true;
+      this.loading = false;
+    });
+  }
+
+  get end() {
+    return this.start + this.pageSize;
+  }
+  getCommit(sha) {
+    return this.content[sha];
+  }
+}
+
 class History {
-  constructor(commits, pageSize = 100, bound = 30) {
+  constructor(commits, startAt = 0, pageSize = 100, bound = 25) {
     this.commits = commits;
     this.pageSize = pageSize;
     this.bound = bound;
 
-    this.pages = [null, null, null];
-    this.currLoading = this.ensurePageLoaded(1, 0, pageSize).then(() => {
-      this.lo = 0;
-      this.hi = pageSize;
-      this.currLoading = null;
-    });
+    this.currPage = new HistoryPage([], 0, 0);
+    this.prevPage = new HistoryPage([], 0, 0);
+    this.nextPage = new HistoryPage([], 0, 0);
   }
 
-  ensurePageLoaded(pageNo, lo, hi) {
-    this.pages[pageNo] = {};
-    return Promise.all(
-      this.commits.slice(lo, hi).map(async commit => {
-        const content = await getContent(commit.sha);
-        this.pages[pageNo][commit.sha] = content;
-      })
+  ensureIndex(index) {
+    let pageNo = Math.ceil(index / this.pageSize);
+    let currPageStart = (pageNo - 1) * this.pageSize;
+
+    this.currPage = new HistoryPage(this.commits, currPageStart, this.pageSize);
+
+    this.prevPage = new HistoryPage(
+      this.commits,
+      currPageStart - this.pageSize,
+      this.pageSize
+    );
+
+    this.nextPage = new HistoryPage(
+      this.commits,
+      currPageStart + this.pageSize,
+      this.pageSize
+    );
+
+    return Promise.all([
+      this.currPage.load(),
+      this.nextPage.load(),
+      this.prevPage.load()
+    ]);
+  }
+
+  shiftWindowTo(idx) {
+    if (idx >= this.currPage.end) {
+      this.shiftWindowForward();
+    } else if (idx < this.currPage.start) {
+      this.shiftWindowBackward();
+    }
+  }
+
+  shiftWindowForward() {
+    this.prevPage = this.currPage;
+    this.currPage = this.nextPage;
+
+    this.nextPage = new HistoryPage(
+      this.commits,
+      this.currPage.end,
+      this.pageSize
     );
   }
 
-  possiblyPreparePages(idx) {
-    if (this.currLoading == null) {
-      if (idx <= this.lo + this.bound && this.lo > 0 && this.pages[0] == null) {
-        this.currLoading = this.ensurePageLoaded(
-          0,
-          this.lo - this.pageSize,
-          this.hi - this.pageSize
-        ).then(() => {
-          this.currLoading = null;
-        });
-      } else if (
-        this.hi - this.bound <= idx &&
-        this.hi < this.commits.length &&
-        this.pages[2] == null
-      ) {
-        this.currLoading = this.ensurePageLoaded(
-          2,
-          this.lo + this.pageSize,
-          this.hi + this.pageSize
-        ).then(() => {
-          this.currLoading = null;
-        });
-      }
+  shiftWindowBackward() {
+    this.nextPage = this.currPage;
+    this.currPage = this.prevPage;
+
+    this.prevPage = new HistoryPage(
+      this.commits,
+      this.currPage.start - this.pageSize,
+      this.pageSize
+    );
+  }
+
+  ensureLoading(idx) {
+    if (this.currPage.start <= idx && idx < this.currPage.start + this.bound) {
+      this.prevPage.load();
+    } else if (
+      this.currPage.end - this.bound <= idx &&
+      idx < this.currPage.end
+    ) {
+      this.nextPage.load();
     }
   }
 
   getCommit(idx) {
-    this.possiblyPreparePages(idx);
-
-    if (idx < this.lo) {
-      this.pages[2] = this.pages[1];
-      this.pages[1] = this.pages[0];
-      this.pages[0] = null;
-      this.lo = this.lo - this.pageSize;
-      this.hi = this.hi - this.pageSize;
-    } else if (idx > 0 && idx >= this.hi) {
-      this.pages[0] = this.pages[1];
-      this.pages[1] = this.pages[2];
-      this.pages[2] = null;
-      this.lo = this.lo + this.pageSize;
-      this.hi = this.hi + this.pageSize;
-    }
-
-    return this.pages[1][this.commits[idx].sha];
-  }
-
-  get length() {
-    return this.commits.length;
+    this.shiftWindowTo(idx);
+    this.ensureLoading(idx);
+    return this.currPage.getCommit(this.commits[idx].sha);
   }
 }
 
@@ -110,13 +159,6 @@ async function getHistory() {
     .sort(function(a, b) {
       return a.date - b.date;
     });
-
-  // await Promise.all(
-  //   commits.map(async commit => {
-  //     const content = await getContent(commit.sha);
-  //     commit.content = content;
-  //   })
-  // );
 
   return new History(commits);
 }

@@ -1,31 +1,33 @@
-import React, { useEffect, useState } from "react";
-import { getSlides } from "./differ";
-import { useSpring } from "react-use";
-import Slide from "./slide";
-import "./comment-box.css";
+import React from "react";
+import Loader from "react-loader-spinner";
 
-function hashCode(s) {
-  return s.split("").reduce(function(a, b) {
-    a = (a << 5) - a + b.charCodeAt(0);
-    return a & a;
-  }, 0);
+function PageDbg(props) {
+  return (
+    <div>
+      {props.title} - {props.page.loading ? "loading" : "not loading"} -{" "}
+      {props.page.ready ? "ready" : "not ready"} - size{" "}
+      {Object.keys(props.page.content).length} - {props.page.start} to{" "}
+      {props.page.end}
+    </div>
+  );
 }
 
 export default class HistoryView extends React.Component {
   constructor(props) {
     super(props);
-    this.state = { currIdx: 0, loading: true };
+    this.state = { currIdx: this.props.startAt, loading: true };
     this.handleKeyDown = this.handleKeyDown.bind(this);
   }
 
   componentDidMount() {
     document.addEventListener("keydown", this.handleKeyDown);
-    this.props.history.currLoading.then(() =>
-      this.setState({ loading: false })
-    );
-    var intervalId = setInterval(this.timer.bind(this), 100);
-    // store intervalId in the state so it can be accessed later:
-    this.setState({ intervalId: intervalId });
+
+    this.props.history.ensureIndex(this.props.startAt).then(() => {
+      var intervalId = this.props.autoPlay
+        ? setInterval(this.timer.bind(this), 100)
+        : null;
+      this.setState({ loading: false, intervalId: intervalId });
+    });
   }
 
   componentWillUnmount() {
@@ -36,7 +38,7 @@ export default class HistoryView extends React.Component {
     this.nextSlide();
   }
 
-  render() {
+  renderText() {
     let text = this.props.history.getCommit(this.state.currIdx);
 
     let paragraphs;
@@ -46,24 +48,45 @@ export default class HistoryView extends React.Component {
       paragraphs = [];
     }
 
-    if (!this.state.loading) {
+    return (
+      <div>
+        {paragraphs.map(paragraph => (
+          <p>
+            {paragraph.split("\n").map(line => (
+              <React.Fragment>
+                {line}
+                <br />
+              </React.Fragment>
+            ))}
+          </p>
+        ))}
+      </div>
+    );
+  }
+
+  render() {
+    if (this.state.loading) {
       return (
-        <div>
-          {paragraphs.map(paragraph => (
-            <p key={hashCode(paragraph)}>
-              {paragraph.split("\n").map(line => (
-                <React.Fragment key={hashCode(line)}>
-                  {line}
-                  <br />
-                </React.Fragment>
-              ))}
-            </p>
-          ))}
+        <div className="loader">
+          <Loader type="Rings" color="#ffffff" height={80} width={80} />
         </div>
       );
-    } else {
-      return <div>Loading</div>;
     }
+
+    return (
+      <div className="content">
+        {this.props.debug ? (
+          <div>
+            <PageDbg title="prev" page={this.props.history.prevPage} />
+            <PageDbg title="curr" page={this.props.history.currPage} />
+            <PageDbg title="next" page={this.props.history.nextPage} />
+            <p>Index: {this.state.currIdx}</p>
+          </div>
+        ) : null}
+
+        {this.renderText()}
+      </div>
+    );
   }
 
   handleKeyDown(e) {
@@ -82,43 +105,8 @@ export default class HistoryView extends React.Component {
   }
 
   nextSlide() {
-    if (this.state.currIdx < this.props.history.length) {
+    if (this.state.currIdx < this.props.history.commits.length - 1) {
       this.setState({ currIdx: this.state.currIdx + 1 });
     }
   }
 }
-
-// export default function History({ history, language }) {
-//   const codes = commits.map(commit => commit.content);
-//   const slideLines = getSlides(codes, language);
-//   const [current, target, setTarget] = useSliderSpring(codes.length - 1);
-//   const index = Math.round(current);
-
-//   const nextSlide = () =>
-//     setTarget(Math.min(Math.round(target + 0.51), slideLines.length - 1));
-//   const prevSlide = () => setTarget(Math.max(Math.round(target - 0.51), 0));
-
-//     document.body.onkeydown = function(e) {
-//       if (e.keyCode === 39) {
-//         nextSlide();
-//       } else if (e.keyCode === 37) {
-//         prevSlide();
-//       } else if (e.keyCode === 32) {
-//         setTarget(current);
-//       }
-//     };
-
-//   return (
-//     <React.Fragment>
-//       <Slide time={current - index} lines={slideLines[index]} />
-//     </React.Fragment>
-//   );
-// }
-// function useSliderSpring(initial) {
-//   const [target, setTarget] = useState(initial);
-//   const tension = 0;
-//   const friction = 10;
-//   const value = useSpring(target, tension, friction);
-
-//   return [Math.round(value * 100) / 100, target, setTarget];
-// }

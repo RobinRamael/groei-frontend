@@ -3,7 +3,15 @@ import ReactDOM from "react-dom";
 import HistoryView from "./history";
 
 function App({ history }) {
-  return <HistoryView history={history} />;
+  let startAt = parseInt(window.location.hash.substr(1));
+  return (
+    <HistoryView
+      history={history}
+      startAt={startAt || 0}
+      autoPlay={false}
+      debug={false}
+    />
+  );
 }
 
 export function render(history, root) {
