@@ -1,176 +1,67 @@
 import React from "react";
 import Loader from "react-loader-spinner";
+import * as stringHash from "string-hash";
 
-const JsDiff = require("diff");
-const stringHash = require("string-hash");
+import { treeDiff, ADDED, REMOVED } from "./differ";
 
-const ADDED = "added";
-const REMOVED = "removed";
-const UNCHANGED = "";
-const PAR_SEP = "\n\n";
-const LINE_SEP = "\n";
+function withUniqueKeys(xs) {
+  let seen = new Set();
 
-function partStatus(part) {
-  return part.added ? ADDED : part.removed ? REMOVED : UNCHANGED;
-}
-
-function splitOnFirst(s, sep) {
-  let sepIndex = s.indexOf(sep);
-
-  if (sepIndex === -1) {
-    return [s, ""];
-  } else {
-    return [s.substring(0, sepIndex), s.substring(sepIndex + sep.length)];
-  }
-}
-
-function splitOnLast(s, sep) {
-  let sepIndex = s.lastIndexOf(sep);
-
-  if (sepIndex === -1) {
-    return [s, ""];
-  } else {
-    return [s.substring(0, sepIndex), s.substring(sepIndex + sep.length)];
-  }
-}
-
-class Hunk {
-  constructor(content, part) {
-    this.content = content;
-    this.status = partStatus(part);
-  }
-}
-
-class Line {
-  constructor(hunks = []) {
-    this.hunks = hunks;
-  }
-
-  add(hunk) {
-    this.hunks.push(hunk);
-  }
-
-  keyed_hunks() {
-    let seen = new Set();
-
-    return this.hunks.map((hunk, i) => {
-      let key;
-      if (seen.has(hunk.content)) {
-        key = stringHash(hunk.content) + "-" + i;
-      } else {
-        key = stringHash(hunk.content);
-      }
-
-      seen.add(hunk.content);
-
-      hunk.key = key;
-      return hunk;
-    });
-  }
-}
-
-class Paragraph {
-  constructor(lines = []) {
-    this.lines = lines;
-  }
-
-  add(line) {
-    this.lines.push(line);
-  }
-}
-
-function treeDiff(diff) {
-  let tree = [];
-  let currPar = new Paragraph();
-  let currLine = new Line();
-
-  diff.forEach(part => {
-    var text = part.value.replace(/\n *\n/g, "\n\n");
-
-    let [firstLineTail, partWithoutFirstLine] = splitOnFirst(text, "\n");
-
-    currLine.add(new Hunk(firstLineTail, part));
-
-    if (!partWithoutFirstLine) {
-      return;
-    }
-    // if this is the end of the line not, the end of the part
-    currPar.add(currLine);
-    currLine = new Line();
-
-    let [firstParagraphTail, restOfPart] = splitOnFirst(
-      partWithoutFirstLine,
-      "\n\n"
-    );
-
-    firstParagraphTail
-      .split("\n")
-      .filter(s => s)
-      .forEach(line => currPar.add(new Line([new Hunk(line, part)])));
-
-    if (!restOfPart) {
-      return;
+  return xs.map((part, i) => {
+    let key;
+    if (seen.has(part.text)) {
+      key = part.text + "-" + i;
+    } else {
+      key = part.text;
     }
 
-    // if this is the end of the par, not the end of the part
-    tree.push(currPar);
-    currPar = new Paragraph();
+    seen.add(part.text);
 
-    let [middleParagraphs, tailParagraphHead] = splitOnLast(restOfPart, "\n\n");
-
-    // add the middle
-    middleParagraphs.split("\n\n").forEach(par => {
-      let lines = par
-        .split("\n")
-        .filter(s => s)
-        .map(line => new Line([new Hunk(line, part)]));
-
-      tree.push(new Paragraph(lines));
-    });
-
-    let [lastParagraphFirstLines, lastLinePart] = splitOnLast(
-      tailParagraphHead,
-      "\n"
-    );
-
-    lastParagraphFirstLines
-      .split("\n")
-      .filter(s => s)
-      .forEach(line => currPar.add(new Line([new Hunk(line, part)])));
-
-    currLine.add(new Hunk(lastLinePart, part));
+    part.key = key;
+    return part;
   });
+}
 
-  currPar.add(currLine);
-  tree.push(currPar);
-  return tree;
+function LineView(props) {
+  return (
+    <React.Fragment>
+      {withUniqueKeys(props.line.hunks)
+        .filter(h => h.status !== props.dontShowStatus)
+        .map(hunk => (
+          <span className={hunk.status} key={hunk.key}>
+            {hunk.content}
+          </span>
+        ))}
+      <br />
+    </React.Fragment>
+  );
+}
+
+function ParagraphView(props) {
+  return (
+    <p>
+      {withUniqueKeys(props.paragraph.lines).map(line => (
+        <LineView
+          line={line}
+          dontShowStatus={props.dontShowStatus}
+          key={line.key}
+        />
+      ))}
+    </p>
+  );
 }
 
 function DiffViewer(props) {
-  let diff = JsDiff.diffWords(props.from.trim(), props.to.trim());
-
-  let diffTree = treeDiff(diff);
+  let diffTree = treeDiff(props.from.trim(), props.to.trim());
 
   return (
     <div className="container">
-      {diffTree.map((par, i) => (
-        <p>
-          {par.lines.map(line => {
-            return (
-              <React.Fragment>
-                {line
-                  .keyed_hunks()
-                  .filter(h => h.status !== props.dontShowStatus)
-                  .map(hunk => (
-                    <span className={hunk.status} key={hunk.key}>
-                      {hunk.content}
-                    </span>
-                  ))}
-                <br />
-              </React.Fragment>
-            );
-          })}
-        </p>
+      {withUniqueKeys(diffTree).map(par => (
+        <ParagraphView
+          paragraph={par}
+          dontShowStatus={props.dontShowStatus}
+          key={par.key}
+        />
       ))}
     </div>
   );
@@ -186,6 +77,7 @@ function PageDbg(props) {
     </div>
   );
 }
+
 export default class HistoryView extends React.Component {
   constructor(props) {
     super(props);
