@@ -2,27 +2,16 @@ import React from "react";
 import Loader from "react-loader-spinner";
 
 const JsDiff = require("diff");
+const stringHash = require("string-hash");
 
-// {
-// console.log(part); return part.value
-//   .split("\n")
-//   .filter(part => part.removed)
-//   .map(parsInCurrPart => (
-//     <p className={part.added ? "green" : part.removed}>
-//       {parsInCurrPart}
-//     </p>
-//   ));
-// }
-//
-//
-const ADDED = 1;
-const REMOVED = 2;
-const UNCHANGED = 0;
+const ADDED = "added";
+const REMOVED = "removed";
+const UNCHANGED = "";
 const PAR_SEP = "\n\n";
 const LINE_SEP = "\n";
 
 function partStatus(part) {
-  return part.added ? "added" : part.removed ? "removed" : "";
+  return part.added ? ADDED : part.removed ? REMOVED : UNCHANGED;
 }
 
 function splitOnFirst(s, sep) {
@@ -45,24 +34,69 @@ function splitOnLast(s, sep) {
   }
 }
 
+class Hunk {
+  constructor(content, part) {
+    this.content = content;
+    this.status = partStatus(part);
+  }
+}
+
+class Line {
+  constructor(hunks = []) {
+    this.hunks = hunks;
+  }
+
+  add(hunk) {
+    this.hunks.push(hunk);
+  }
+
+  keyed_hunks() {
+    let seen = new Set();
+
+    return this.hunks.map((hunk, i) => {
+      let key;
+      if (seen.has(hunk.content)) {
+        key = stringHash(hunk.content) + "-" + i;
+      } else {
+        key = stringHash(hunk.content);
+      }
+
+      seen.add(hunk.content);
+
+      hunk.key = key;
+      return hunk;
+    });
+  }
+}
+
+class Paragraph {
+  constructor(lines = []) {
+    this.lines = lines;
+  }
+
+  add(line) {
+    this.lines.push(line);
+  }
+}
+
 function treeDiff(diff) {
   let tree = [];
-  let currPar = [];
-  let currLine = [];
+  let currPar = new Paragraph();
+  let currLine = new Line();
 
   diff.forEach(part => {
     var text = part.value.replace(/\n *\n/g, "\n\n");
 
     let [firstLineTail, partWithoutFirstLine] = splitOnFirst(text, "\n");
 
-    currLine.push({ content: firstLineTail, status: partStatus(part) });
+    currLine.add(new Hunk(firstLineTail, part));
 
     if (!partWithoutFirstLine) {
       return;
     }
     // if this is the end of the line not, the end of the part
-    currPar.push(currLine);
-    currLine = []; // close the line
+    currPar.add(currLine);
+    currLine = new Line();
 
     let [firstParagraphTail, restOfPart] = splitOnFirst(
       partWithoutFirstLine,
@@ -72,9 +106,7 @@ function treeDiff(diff) {
     firstParagraphTail
       .split("\n")
       .filter(s => s)
-      .forEach(line =>
-        currPar.push([{ content: line, status: partStatus(part) }])
-      );
+      .forEach(line => currPar.add(new Line([new Hunk(line, part)])));
 
     if (!restOfPart) {
       return;
@@ -82,18 +114,18 @@ function treeDiff(diff) {
 
     // if this is the end of the par, not the end of the part
     tree.push(currPar);
-    currPar = []; // close the par
+    currPar = new Paragraph();
 
     let [middleParagraphs, tailParagraphHead] = splitOnLast(restOfPart, "\n\n");
 
     // add the middle
     middleParagraphs.split("\n\n").forEach(par => {
-      let splitPar = par
+      let lines = par
         .split("\n")
         .filter(s => s)
-        .map(line => [{ content: line, status: partStatus(part) }]);
+        .map(line => new Line([new Hunk(line, part)]));
 
-      tree.push(splitPar);
+      tree.push(new Paragraph(lines));
     });
 
     let [lastParagraphFirstLines, lastLinePart] = splitOnLast(
@@ -104,33 +136,40 @@ function treeDiff(diff) {
     lastParagraphFirstLines
       .split("\n")
       .filter(s => s)
-      .forEach(line =>
-        currPar.push([{ content: line, status: partStatus(part) }])
-      );
+      .forEach(line => currPar.add(new Line([new Hunk(line, part)])));
 
-    currLine.push({ content: lastLinePart, status: partStatus(part) });
+    currLine.add(new Hunk(lastLinePart, part));
   });
 
-  currPar.push(currLine);
+  currPar.add(currLine);
   tree.push(currPar);
   return tree;
 }
 
 function DiffViewer(props) {
-  let diffTree = treeDiff(props.diff);
+  let diff = JsDiff.diffWords(props.from.trim(), props.to.trim());
+
+  let diffTree = treeDiff(diff);
 
   return (
     <div className="container">
       {diffTree.map((par, i) => (
         <p>
-          {par.map(line => (
-            <React.Fragment>
-              {line.map(hunk => (
-                <span class={hunk.status}> {hunk.content} </span>
-              ))}
-              <br />
-            </React.Fragment>
-          ))}
+          {par.lines.map(line => {
+            return (
+              <React.Fragment>
+                {line
+                  .keyed_hunks()
+                  .filter(h => h.status !== props.dontShowStatus)
+                  .map(hunk => (
+                    <span className={hunk.status} key={hunk.key}>
+                      {hunk.content}
+                    </span>
+                  ))}
+                <br />
+              </React.Fragment>
+            );
+          })}
         </p>
       ))}
     </div>
@@ -153,7 +192,8 @@ export default class HistoryView extends React.Component {
     this.state = {
       currIdx: this.props.startAt,
       loading: true,
-      goingForward: true
+      goingForward: true,
+      autoPlaying: this.props.autoPlay
     };
     this.handleKeyDown = this.handleKeyDown.bind(this);
   }
@@ -161,10 +201,11 @@ export default class HistoryView extends React.Component {
   componentDidMount() {
     document.addEventListener("keydown", this.handleKeyDown);
 
+    var intervalId = this.state.autoPlaying
+      ? setInterval(this.timer.bind(this), 100)
+      : null;
+
     this.props.history.ensureIndex(this.props.startAt).then(() => {
-      var intervalId = this.props.autoPlay
-        ? setInterval(this.timer.bind(this), 100)
-        : null;
       this.setState({ loading: false, intervalId: intervalId });
     });
   }
@@ -177,21 +218,43 @@ export default class HistoryView extends React.Component {
     this.nextSlide();
   }
 
+  handlePressPlayPause() {
+    console.log(this.state.autoPlaying);
+    this.state.autoPlaying ? this.pause() : this.play();
+  }
+
+  pause() {
+    this.setState({ autoPlaying: false });
+    clearInterval(this.state.intervalId);
+  }
+
+  play() {
+    let intervalId = setInterval(this.timer.bind(this), 100);
+    this.setState({ intervalId: intervalId, autoPlaying: true });
+  }
+
   renderText() {
     let from, to;
+
     if (this.state.goingForward) {
-      if (this.state.currIdx === 0) {
-        from = "";
-      } else {
-        from = this.props.history.getCommit(this.state.currIdx - 1);
-      }
-      to = this.props.history.getCommit(this.state.currIdx);
+      from = this.props.history.getCommit(this.state.currIdx);
+      to = this.props.history.getCommit(
+        this.state.currIdx < this.props.history.commits.length
+          ? this.state.currIdx + 1
+          : this.state.currIdx
+      );
     } else {
       to = this.props.history.getCommit(this.state.currIdx);
       from = this.props.history.getCommit(this.state.currIdx + 1);
     }
 
-    return <DiffViewer diff={JsDiff.diffWords(from.trim(), to.trim())} />;
+    return (
+      <DiffViewer
+        from={from}
+        to={to}
+        dontShowStatus={this.state.goingForward ? REMOVED : ADDED}
+      />
+    );
   }
 
   render() {
@@ -220,11 +283,12 @@ export default class HistoryView extends React.Component {
   }
 
   handleKeyDown(e) {
-    clearInterval(this.state.intervalId);
     if (e.keyCode === 39) {
       this.nextSlide();
     } else if (e.keyCode === 37) {
       this.previousSlide();
+    } else if (e.keyCode === 69) {
+      this.handlePressPlayPause();
     }
   }
 
@@ -236,7 +300,7 @@ export default class HistoryView extends React.Component {
 
   nextSlide() {
     if (this.state.currIdx < this.props.history.commits.length - 1) {
-      this.setState({ currIdx: this.state.currIdx + 1 });
+      this.setState({ currIdx: this.state.currIdx + 1, goingForward: true });
     }
   }
 }

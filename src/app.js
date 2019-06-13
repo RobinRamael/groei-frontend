@@ -7,6 +7,7 @@ function App({ history }) {
   let searchParams = new URLSearchParams(url.search);
   let startAt = parseInt(searchParams.get("start") || "0");
   let autoPlay = parseInt(searchParams.get("autoplay")) === 1;
+  let debug = parseInt(searchParams.get("debug") || "0") === 1;
 
   console.log(startAt, autoPlay);
 
@@ -15,7 +16,7 @@ function App({ history }) {
       history={history}
       startAt={startAt}
       autoPlay={autoPlay}
-      debug={false}
+      debug={debug}
     />
   );
 }
