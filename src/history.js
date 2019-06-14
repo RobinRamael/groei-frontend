@@ -129,8 +129,10 @@ export default class HistoryView extends React.Component {
   }
 
   renderText() {
-    let from = this.props.history.getCommit(this.state.currIdx);
-    let to = this.props.history.getCommit(this.state.currIdx + 1);
+    let from = this.props.history.getCommit(Math.max(0, this.state.currIdx));
+    let to = this.props.history.getCommit(
+      Math.min(this.props.history.commits.length - 1, this.state.currIdx + 1)
+    );
 
     return (
       <div className="container">
