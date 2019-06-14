@@ -11,30 +11,10 @@ function partStatus(part) {
   return part.added ? ADDED : part.removed ? REMOVED : UNCHANGED;
 }
 
-function splitOnFirst(s, sep) {
-  let sepIndex = s.indexOf(sep);
-
-  if (sepIndex === -1) {
-    return [s, ""];
-  } else {
-    return [s.substring(0, sepIndex), s.substring(sepIndex + sep.length)];
-  }
-}
-
-function splitOnLast(s, sep) {
-  let sepIndex = s.lastIndexOf(sep);
-
-  if (sepIndex === -1) {
-    return [s, ""];
-  } else {
-    return [s.substring(0, sepIndex), s.substring(sepIndex + sep.length)];
-  }
-}
-
 class Hunk {
-  constructor(content, part) {
+  constructor(content, status) {
     this.content = content;
-    this.status = partStatus(part);
+    this.status = status;
   }
 
   get text() {
@@ -67,76 +47,82 @@ class Paragraph {
   }
 
   get text() {
-    let s = this.lines.map(l => l.text).join("");
+    let s = this.lines.map(l => l.text).join("\n");
     return s;
   }
 }
 
+export function simpleSplit(text) {
+  return text
+    .replace(/\n *\n/g, PAR_SEP)
+    .split(PAR_SEP)
+    .map(
+      par =>
+        new Paragraph(
+          par.split(LINE_SEP).map(line => new Line([new Hunk(line, {})]))
+        )
+    );
+}
+
+const READING = 0;
+const READNEWLINE = 1;
+
 export function treeDiff(from, to) {
-  let diff = jsdiff.diffWords(to, from);
+  let diff = jsdiff.diffWords(from, to);
 
   let tree = [];
+
   let currPar = new Paragraph();
   let currLine = new Line();
+  let currHunkChars = [];
+
+  let state = READING;
 
   diff.forEach(part => {
-    var text = part.value.replace(/\n *\n/g, "\n\n");
+    let status = partStatus(part);
+    part.value
+      .replace(/\n *\n/g, PAR_SEP)
+      .split("")
+      .forEach(c => {
+        if (state === READNEWLINE) {
+          if (c === LINE_SEP) {
+            // just read second newline
+            // => end of paragraph
 
-    let [firstLineTail, partWithoutFirstLine] = splitOnFirst(text, "\n");
+            currLine.add(new Hunk(currHunkChars.join(""), status));
+            currPar.add(currLine);
+            tree.push(currPar);
 
-    currLine.add(new Hunk(firstLineTail, part));
+            currHunkChars = [];
+            currLine = new Line();
+            currPar = new Paragraph();
+            state = READING;
+          } else {
+            // read one newline and then something else
+            // => end of line
+            currLine.add(new Hunk(currHunkChars.join(""), status));
+            currPar.add(currLine);
 
-    if (!partWithoutFirstLine) {
-      return;
-    }
-    // if this is the end of the line not, the end of the part
-    currPar.add(currLine);
-    currLine = new Line();
+            currLine = new Line();
+            currHunkChars = [c];
+            state = READING;
+          }
+        } else {
+          // READING state
 
-    let [firstParagraphTail, restOfPart] = splitOnFirst(
-      partWithoutFirstLine,
-      "\n\n"
-    );
-
-    firstParagraphTail
-      .split("\n")
-      .filter(s => s)
-      .forEach(line => currPar.add(new Line([new Hunk(line, part)])));
-
-    if (!restOfPart) {
-      return;
-    }
-
-    // if this is the end of the par, not the end of the part
-    tree.push(currPar);
-    currPar = new Paragraph();
-
-    let [middleParagraphs, tailParagraphHead] = splitOnLast(restOfPart, "\n\n");
-
-    // add the middle
-    middleParagraphs.split("\n\n").forEach(par => {
-      let lines = par
-        .split("\n")
-        .filter(s => s)
-        .map(line => new Line([new Hunk(line, part)]));
-
-      tree.push(new Paragraph(lines));
-    });
-
-    let [lastParagraphFirstLines, lastLinePart] = splitOnLast(
-      tailParagraphHead,
-      "\n"
-    );
-
-    lastParagraphFirstLines
-      .split("\n")
-      .filter(s => s)
-      .forEach(line => currPar.add(new Line([new Hunk(line, part)])));
-
-    currLine.add(new Hunk(lastLinePart, part));
+          if (c === LINE_SEP) {
+            // just read first newline
+            state = READNEWLINE;
+          } else {
+            // just read a char that is not a newline
+            currHunkChars.push(c);
+            state = READING;
+          }
+        }
+      });
+    currLine.add(new Hunk(currHunkChars.join(""), status));
+    currHunkChars = [];
   });
 
-  currPar.add(currLine);
-  tree.push(currPar);
   return tree;
 }

@@ -2,7 +2,7 @@ import React from "react";
 import Loader from "react-loader-spinner";
 import * as stringHash from "string-hash";
 
-import { treeDiff, ADDED, REMOVED } from "./differ";
+import { treeDiff, simpleSplit } from "./differ";
 
 function withUniqueKeys(xs) {
   let seen = new Set();
@@ -25,13 +25,11 @@ function withUniqueKeys(xs) {
 function LineView(props) {
   return (
     <React.Fragment>
-      {withUniqueKeys(props.line.hunks)
-        .filter(h => h.status !== props.dontShowStatus)
-        .map(hunk => (
-          <span className={hunk.status} key={hunk.key}>
-            {hunk.content}
-          </span>
-        ))}
+      {withUniqueKeys(props.line.hunks).map(hunk => (
+        <span className={hunk.status} key={hunk.key}>
+          {hunk.content}
+        </span>
+      ))}
       <br />
     </React.Fragment>
   );
@@ -51,20 +49,25 @@ function ParagraphView(props) {
   );
 }
 
-function DiffViewer(props) {
-  let diffTree = treeDiff(props.from.trim(), props.to.trim());
-
+function Poem(props) {
   return (
-    <div className="container">
-      {withUniqueKeys(diffTree).map(par => (
-        <ParagraphView
-          paragraph={par}
-          dontShowStatus={props.dontShowStatus}
-          key={par.key}
-        />
+    <div className="diff container">
+      {withUniqueKeys(props.diff).map(par => (
+        <ParagraphView paragraph={par} key={par.key} />
       ))}
     </div>
   );
+}
+function DiffViewer(props) {
+  let diffTree = treeDiff(props.from, props.to);
+
+  return <Poem diff={diffTree} />;
+}
+
+function SimpleView(props) {
+  let diffTree = simpleSplit(props.text);
+
+  return <Poem diff={diffTree} />;
 }
 
 function PageDbg(props) {
@@ -126,26 +129,15 @@ export default class HistoryView extends React.Component {
   }
 
   renderText() {
-    let from, to;
-
-    if (this.state.goingForward) {
-      from = this.props.history.getCommit(this.state.currIdx);
-      to = this.props.history.getCommit(
-        this.state.currIdx < this.props.history.commits.length
-          ? this.state.currIdx + 1
-          : this.state.currIdx
-      );
-    } else {
-      to = this.props.history.getCommit(this.state.currIdx);
-      from = this.props.history.getCommit(this.state.currIdx + 1);
-    }
+    let from = this.props.history.getCommit(this.state.currIdx);
+    let to = this.props.history.getCommit(this.state.currIdx + 1);
 
     return (
-      <DiffViewer
-        from={from}
-        to={to}
-        dontShowStatus={this.state.goingForward ? REMOVED : ADDED}
-      />
+      <div className="container">
+        {this.props.debug ? <SimpleView text={from} /> : null}
+        <DiffViewer from={from} to={to} />
+        {this.props.debug ? <SimpleView text={to} /> : null}
+      </div>
     );
   }
 
@@ -165,7 +157,9 @@ export default class HistoryView extends React.Component {
             <PageDbg title="prev" page={this.props.history.prevPage} />
             <PageDbg title="curr" page={this.props.history.currPage} />
             <PageDbg title="next" page={this.props.history.nextPage} />
-            <p>Index: {this.state.currIdx}</p>
+            <p>
+              from: {this.state.currIdx} - to: {this.state.currIdx + 1}
+            </p>
           </div>
         ) : null}
 
