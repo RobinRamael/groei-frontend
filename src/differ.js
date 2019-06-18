@@ -22,9 +22,71 @@ class Hunk {
   }
 }
 
+function partition(xs, f) {
+  let passed = [];
+  let failed = [];
+
+  xs.forEach(x => {
+    if (f(x)) {
+      passed.push(x);
+    } else {
+      failed.push(x);
+    }
+  });
+
+  return [passed, failed];
+}
+
 class Line {
   constructor(hunks = []) {
     this.hunks = hunks;
+  }
+
+  getNormalizedHunks(statusComingFirst = ADDED) {
+    let parts = [];
+    let currPart = [];
+
+    this.hunks.forEach(hunk => {
+      if (hunk.content === " ") {
+        currPart.content += " ";
+      } else if (hunk.status === UNCHANGED) {
+        parts.push(currPart);
+        parts.push([hunk]);
+        currPart = [];
+      } else {
+        currPart.push(hunk);
+      }
+    });
+
+    if (currPart) {
+      parts.push(currPart);
+    }
+
+    return (
+      parts
+        .map(part => {
+          // we can ignore UNCHANGED here, as it will always be by itself in a part.
+          let [added, removed] = partition(
+            part,
+            h => h.status === statusComingFirst
+          );
+
+          return added.concat(removed);
+        })
+        .flat()
+        // .filter(hunk => hunk.content.trim() !== "")
+        .reduce((mergedHunks, hunk) => {
+          if (
+            mergedHunks.length === 0 || // if the array doesn't have a last element yet
+            mergedHunks[mergedHunks.length - 1].status !== hunk.status // or if the last element has a different status
+          ) {
+            return mergedHunks.concat([hunk]); // start a new hunk
+          } else {
+            mergedHunks[mergedHunks.length - 1].content += " " + hunk.content; // add to the last one
+            return mergedHunks;
+          }
+        }, [])
+    );
   }
 
   add(hunk) {

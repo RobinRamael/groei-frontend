@@ -2,7 +2,7 @@ import React from "react";
 import Loader from "react-loader-spinner";
 import * as stringHash from "string-hash";
 
-import { treeDiff, simpleSplit } from "./differ";
+import { treeDiff, simpleSplit, ADDED, REMOVED } from "./differ";
 
 function withUniqueKeys(xs) {
   let seen = new Set();
@@ -25,9 +25,12 @@ function withUniqueKeys(xs) {
 function LineView(props) {
   return (
     <React.Fragment>
-      {withUniqueKeys(props.line.hunks).map(hunk => (
+      {withUniqueKeys(
+        props.line.getNormalizedHunks(props.statusComingFirst)
+      ).map(hunk => (
         <span className={hunk.status} key={hunk.key}>
-          {hunk.content}
+          {hunk.content}{" "}
+          {/* space is important here, as react doesn't seem to render it otherwise.*/}
         </span>
       ))}
       <br />
@@ -41,7 +44,7 @@ function ParagraphView(props) {
       {withUniqueKeys(props.paragraph.lines).map(line => (
         <LineView
           line={line}
-          dontShowStatus={props.dontShowStatus}
+          statusComingFirst={props.statusComingFirst}
           key={line.key}
         />
       ))}
@@ -53,7 +56,11 @@ function Poem(props) {
   return (
     <div className="diff container">
       {withUniqueKeys(props.diff).map(par => (
-        <ParagraphView paragraph={par} key={par.key} />
+        <ParagraphView
+          paragraph={par}
+          key={par.key}
+          statusComingFirst={props.goingForward ? ADDED : REMOVED}
+        />
       ))}
     </div>
   );
@@ -61,7 +68,7 @@ function Poem(props) {
 function DiffViewer(props) {
   let diffTree = treeDiff(props.from, props.to);
 
-  return <Poem diff={diffTree} />;
+  return <Poem diff={diffTree} goingForward={props.goingForward} />;
 }
 
 function SimpleView(props) {
@@ -137,7 +144,11 @@ export default class HistoryView extends React.Component {
     return (
       <div className="container">
         {this.props.debug ? <SimpleView text={from} /> : null}
-        <DiffViewer from={from} to={to} />
+        <DiffViewer
+          from={from}
+          to={to}
+          goingForward={this.state.goingForward}
+        />
         {this.props.debug ? <SimpleView text={to} /> : null}
       </div>
     );
