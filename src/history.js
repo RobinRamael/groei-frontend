@@ -182,10 +182,13 @@ export default class HistoryView extends React.Component {
 
   handleKeyDown(e) {
     if (e.keyCode === 39) {
+      this.pause();
       this.nextSlide();
     } else if (e.keyCode === 37) {
+      this.pause();
       this.previousSlide();
-    } else if (e.keyCode === 69) {
+    } else if (e.keyCode === 69 || e.keyCode === 32) {
+      e.preventDefault();
       this.handlePressPlayPause();
     }
   }
