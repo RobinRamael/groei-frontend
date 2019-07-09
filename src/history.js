@@ -88,6 +88,12 @@ function PageDbg(props) {
   );
 }
 
+function later(delay) {
+  return new Promise(function(resolve) {
+    setTimeout(resolve, delay);
+  });
+}
+
 export default class HistoryView extends React.Component {
   constructor(props) {
     super(props);
@@ -107,8 +113,18 @@ export default class HistoryView extends React.Component {
       ? setInterval(this.timer.bind(this), this.props.delay)
       : null;
 
-    this.props.history.ensureIndex(this.props.startAt).then(() => {
-      this.setState({ loading: false, intervalId: intervalId });
+    Promise.all([
+      this.props.history.ensureIndex(this.props.startAt),
+      later(2000)
+    ]).then(() => {
+      this.setState({
+        loading: false,
+        starting: true,
+        intervalId: intervalId
+      });
+      later(700).then(() => {
+        this.setState({ starting: false });
+      });
     });
   }
 
@@ -156,10 +172,13 @@ export default class HistoryView extends React.Component {
   render() {
     if (this.state.loading) {
       return (
-        <div className="loader">
-          <Loader type="Rings" color="#ffffff" height={80} width={80} />
+        <div className="content">
+          alles mengt met elkaar <br /> maar heel traag <br /> – marwin vos
         </div>
       );
+    }
+    if (this.state.starting) {
+      return <div className="content" />;
     }
 
     return (
