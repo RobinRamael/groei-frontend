@@ -20,7 +20,11 @@ function App({ history }) {
         debug={debug}
         delay={delay}
       />
-      <p className="help" data-place="left" data-tip="spatie - links - rechts">
+      <p
+        className="help"
+        data-place="left"
+        data-tip="raak scherm aan - spatie - links - rechts"
+      >
         ?
       </p>
       <ReactTooltip />
