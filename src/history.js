@@ -104,7 +104,7 @@ export default class HistoryView extends React.Component {
     document.addEventListener("keydown", this.handleKeyDown);
 
     var intervalId = this.state.autoPlaying
-      ? setInterval(this.timer.bind(this), 100)
+      ? setInterval(this.timer.bind(this), this.props.delay)
       : null;
 
     this.props.history.ensureIndex(this.props.startAt).then(() => {
@@ -121,7 +121,6 @@ export default class HistoryView extends React.Component {
   }
 
   handlePressPlayPause() {
-    console.log(this.state.autoPlaying);
     this.state.autoPlaying ? this.pause() : this.play();
   }
 
@@ -131,7 +130,7 @@ export default class HistoryView extends React.Component {
   }
 
   play() {
-    let intervalId = setInterval(this.timer.bind(this), 100);
+    let intervalId = setInterval(this.timer.bind(this), this.props.delay);
     this.setState({ intervalId: intervalId, autoPlaying: true });
   }
 
