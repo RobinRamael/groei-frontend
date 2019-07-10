@@ -171,8 +171,8 @@ export default class HistoryView extends React.Component {
         ) : null}
         {this.props.debug ? <SimpleView text={from} /> : null}
         <DiffViewer
-          from={from}
-          to={to}
+          from={from.trimStart()}
+          to={to.trimStart()}
           goingForward={this.state.goingForward}
         />
         {this.props.debug ? <SimpleView text={to} /> : null}
