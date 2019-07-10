@@ -28,8 +28,8 @@
         padding: 0;
         height: 100%;
         font-family: 'Roboto Slab', serif;
-        font-size: 8px;
         line-height: 1.4;
+        font-size: 14px;
         -webkit-font-smoothing: antialiased;
         -moz-osx-font-smoothing: grayscale;
         background-color: rgb(1, 22, 39);
@@ -48,8 +48,8 @@
       }
 
       .content {
-          width: 90%;
-          margin: 3em auto;
+          width: 60%;
+          margin: 9em auto;
       }
 
       .added {
@@ -60,11 +60,14 @@
           color: red;
       }
 
-      @media(min-width: 600px) {
+      @media(max-width: 1000px) {
           .content {
-              font-size: 15px;
+              margin: 3em auto;
+              width: 90%;
+              font-size: calc(8px + 6 * ((100vw - 320px) / 680))
           }
       }
+
 
       #root {
         height: 100%;
