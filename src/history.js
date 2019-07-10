@@ -166,6 +166,9 @@ export default class HistoryView extends React.Component {
 
     return (
       <div className="container">
+        {this.props.showTitle && this.props.title ? (
+          <h1 className="not-in-diff">{this.props.title}</h1>
+        ) : null}
         {this.props.debug ? <SimpleView text={from} /> : null}
         <DiffViewer
           from={from}
@@ -187,7 +190,15 @@ export default class HistoryView extends React.Component {
         );
       }
       if (this.state.starting) {
-        return <div className="content" />;
+        return (
+          <div className="content">
+            <div className="container">
+              {this.props.showTitle && this.props.title ? (
+                <h1 className="not-in-diff">{this.props.title}</h1>
+              ) : null}
+            </div>
+          </div>
+        );
       }
     } else if (this.state.loading) {
       return (

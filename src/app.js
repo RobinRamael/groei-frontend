@@ -16,6 +16,9 @@ function App({ history, showEpitaph }) {
   let poemName =
     POEMS.find(name => url.pathname.includes(name)) || "hethaltingprobleem";
 
+  let title =
+    poemName === "hethaltingprobleem" ? "het halting probleem" : "love poem";
+
   return (
     <React.Fragment>
       <HistoryView
@@ -25,6 +28,8 @@ function App({ history, showEpitaph }) {
         debug={debug}
         delay={delay}
         showEpitaph={poemName === "hethaltingprobleem"}
+        title={title}
+        showTitle={poemName === "hethaltingprobleem"}
       />
       <p
         className="help"
