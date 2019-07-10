@@ -47,7 +47,7 @@ function LineView(props) {
 
 function ParagraphView(props) {
   return (
-    <p>
+    <div className="paragraph">
       {withUniqueKeys(props.paragraph.lines).map(line => (
         <LineView
           line={line}
@@ -55,7 +55,7 @@ function ParagraphView(props) {
           key={line.key}
         />
       ))}
-    </p>
+    </div>
   );
 }
 
