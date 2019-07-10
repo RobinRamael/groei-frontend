@@ -1,9 +1,9 @@
 const root = document.getElementById("root");
 const message = document.getElementById("message");
 
-async function getContent(sha) {
+async function getContent(poemName, sha) {
   const contentResponse = await fetch(
-    process.env.PUBLIC_URL + `/versions/hethaltingprobleem/${sha}.json`
+    process.env.PUBLIC_URL + `/versions/${poemName}/${sha}.json`
   );
 
   if (!contentResponse.ok) {
@@ -15,10 +15,12 @@ async function getContent(sha) {
 }
 
 class HistoryPage {
-  constructor(commits, start, pageSize) {
+  constructor(poemName, commits, start, pageSize) {
+    console.log(poemName, commits, start, pageSize);
     this.commits = commits || [];
     this.start = start;
     this.pageSize = pageSize;
+    this.poemName = poemName;
 
     this.loading = false;
     this.ready = false;
@@ -42,7 +44,7 @@ class HistoryPage {
 
     return Promise.all(
       shasToLoad.map(async sha => {
-        this.content[sha] = await getContent(sha);
+        this.content[sha] = await getContent(this.poemName, sha);
       })
     ).then(() => {
       this.ready = true;
@@ -59,29 +61,37 @@ class HistoryPage {
 }
 
 class History {
-  constructor(commits, startAt = 0, pageSize = 100, bound = 25) {
+  constructor(poemName, commits, startAt = 0, pageSize = 100, bound = 25) {
+    this.poemName = poemName;
     this.commits = commits;
     this.pageSize = pageSize;
     this.bound = bound;
 
-    this.currPage = new HistoryPage([], 0, 0);
-    this.prevPage = new HistoryPage([], 0, 0);
-    this.nextPage = new HistoryPage([], 0, 0);
+    this.currPage = new HistoryPage(poemName, [], 0, 0);
+    this.prevPage = new HistoryPage(poemName, [], 0, 0);
+    this.nextPage = new HistoryPage(poemName, [], 0, 0);
   }
 
   ensureIndex(index) {
     let pageNo = Math.ceil(index / this.pageSize);
     let currPageStart = (pageNo - 1) * this.pageSize;
 
-    this.currPage = new HistoryPage(this.commits, currPageStart, this.pageSize);
+    this.currPage = new HistoryPage(
+      this.poemName,
+      this.commits,
+      currPageStart,
+      this.pageSize
+    );
 
     this.prevPage = new HistoryPage(
+      this.poemName,
       this.commits,
       currPageStart - this.pageSize,
       this.pageSize
     );
 
     this.nextPage = new HistoryPage(
+      this.poemName,
       this.commits,
       currPageStart + this.pageSize,
       this.pageSize
@@ -107,6 +117,7 @@ class History {
     this.currPage = this.nextPage;
 
     this.nextPage = new HistoryPage(
+      this.poemName,
       this.commits,
       this.currPage.end,
       this.pageSize
@@ -118,6 +129,7 @@ class History {
     this.currPage = this.prevPage;
 
     this.prevPage = new HistoryPage(
+      this.poemName,
       this.commits,
       this.currPage.start - this.pageSize,
       this.pageSize
@@ -142,16 +154,22 @@ class History {
   }
 }
 
+const POEMS = ["love_poem", "hethaltingprobleem"];
+
 async function getHistory() {
+  let url = new URL(window.location);
+
+  let poemName =
+    POEMS.find(name => url.pathname.includes(name)) || "hethaltingprobleem";
+
   const commitsResponse = await fetch(
-    process.env.PUBLIC_URL + "/versions/hethaltingprobleem.json"
+    process.env.PUBLIC_URL + `/versions/${poemName}.json`
   );
   if (!commitsResponse.ok) {
     throw commitsResponse;
   }
   const commitsJson = await commitsResponse.json();
   const commits = commitsJson.history
-    .slice(50)
     .map(commit => ({
       sha: commit.hex,
       date: new Date(commit.created)
@@ -160,14 +178,10 @@ async function getHistory() {
       return a.date - b.date;
     });
 
-  return new History(commits);
+  return new History(poemName, commits);
 }
 
-Promise.all([
-  getHistory(),
-  import("./app")
-  // loadLanguage(lang)
-])
+Promise.all([getHistory(), import("./app")])
   .then(([history, app]) => {
     app.render(history, root);
   })
