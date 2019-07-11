@@ -1,3 +1,9 @@
+import * as Sentry from "@sentry/browser";
+
+Sentry.init({
+  dsn: "https://a12468fefc8445ccb495c53f0dbf528c@sentry.io/1502754"
+});
+
 const root = document.getElementById("root");
 const message = document.getElementById("message");
 
