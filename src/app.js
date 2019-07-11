@@ -1,6 +1,7 @@
 import React from "react";
 import ReactDOM from "react-dom";
 import HistoryView from "./history";
+import "./app.scss";
 
 const POEMS = ["love_poem", "hethaltingprobleem"];
 
