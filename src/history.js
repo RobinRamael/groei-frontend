@@ -32,14 +32,16 @@ function LineView(props) {
       {withUniqueKeys(
         props.line.getNormalizedHunks(props.statusComingFirst)
       ).map(hunk => {
-        let content = hunk.content;
+        let content;
         if (hunk.content.match(/\*\*.*\*/)) {
-          let trimmed = content.trim().replace(/^\*+|\*+$/g, "");
+          let trimmed = hunk.content.trim().replace(/^\*+|\*+$/g, "");
           content = <h1>{trimmed}</h1>;
+        } else {
+          content = hunk.content.replace(/[^\x00-\x7F]/g, "").replace(/_/g, "");
         }
         return (
           <span className={hunk.status} key={hunk.key}>
-            {content.replace(/[^\x00-\x7F]/g, "").replace(/_/g, "")}{" "}
+            {content}{" "}
             {/* space is important here, as react doesn't seem to render it otherwise.*/}
           </span>
         );
@@ -117,6 +119,7 @@ export default class HistoryView extends React.Component {
     this.state = {
       currIdx: this.props.startAt,
       initializing: true,
+      loading: true,
       goingForward: true,
       autoPlaying: this.props.autoPlay
     };
@@ -138,6 +141,7 @@ export default class HistoryView extends React.Component {
     ]).then(() => {
       this.setState({
         initializing: false,
+        loading: false,
         starting: true,
         intervalId: intervalId
       });
