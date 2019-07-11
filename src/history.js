@@ -116,6 +116,7 @@ export default class HistoryView extends React.Component {
 
   componentDidMount() {
     document.addEventListener("keydown", this.handleKeyDown);
+    document.title = this.props.title + "- robin ramael";
 
     var intervalId = this.state.autoPlaying
       ? setInterval(this.timer.bind(this), this.props.delay)
