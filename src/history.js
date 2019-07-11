@@ -35,7 +35,7 @@ function LineView(props) {
         }
         return (
           <span className={hunk.status} key={hunk.key}>
-            {content}{" "}
+            {content.replace(/[^\x00-\x7F]/g, "").replace(/_/g, "")}{" "}
             {/* space is important here, as react doesn't seem to render it otherwise.*/}
           </span>
         );
@@ -46,7 +46,7 @@ function LineView(props) {
 }
 
 function ParagraphView(props) {
-  return (
+  let paragraph = (
     <div className="paragraph">
       {withUniqueKeys(props.paragraph.lines).map(line => (
         <LineView
@@ -57,6 +57,12 @@ function ParagraphView(props) {
       ))}
     </div>
   );
+
+  let trimmed = props.paragraph.text.trim();
+  if (trimmed.startsWith("_") && trimmed.endsWith("_")) {
+    return <em>{paragraph}</em>;
+  }
+  return paragraph;
 }
 
 function Poem(props) {
