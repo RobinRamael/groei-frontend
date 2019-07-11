@@ -16,7 +16,6 @@ async function getContent(poemName, sha) {
 
 class HistoryPage {
   constructor(poemName, commits, start, pageSize) {
-    console.log(poemName, commits, start, pageSize);
     this.commits = commits || [];
     this.start = start;
     this.pageSize = pageSize;
