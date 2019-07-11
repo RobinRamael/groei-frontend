@@ -260,6 +260,8 @@ export default class HistoryView extends React.Component {
   nextSlide() {
     if (this.state.currIdx < this.props.history.commits.length - 1) {
       this.setState({ currIdx: this.state.currIdx + 1, goingForward: true });
+    } else {
+      this.pause();
     }
   }
 }
