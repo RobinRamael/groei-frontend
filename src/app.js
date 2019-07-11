@@ -1,7 +1,6 @@
 import React from "react";
 import ReactDOM from "react-dom";
 import HistoryView from "./history";
-import ReactTooltip from "react-tooltip";
 
 const POEMS = ["love_poem", "hethaltingprobleem"];
 
@@ -31,16 +30,6 @@ function App({ history, showEpitaph }) {
         title={title}
         showTitle={poemName === "hethaltingprobleem"}
       />
-      <p
-        className="help"
-        data-place="left"
-        data-type="dark"
-        data-multiline="true"
-        data-tip="raak scherm aan <br/> spatie - links - rechts <br/> ga naar (e)inde"
-      >
-        ?
-      </p>
-      <ReactTooltip />
     </React.Fragment>
   );
 }

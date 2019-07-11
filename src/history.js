@@ -1,6 +1,8 @@
 import React from "react";
 import Tappable from "react-tappable/lib/Tappable";
 import Loader from "react-loader-spinner";
+import { findDOMNode } from "react-dom";
+import ReactTooltip from "react-tooltip";
 
 import { treeDiff, simpleSplit, ADDED, REMOVED } from "./differ";
 
@@ -218,27 +220,41 @@ export default class HistoryView extends React.Component {
     }
 
     return (
-      <Tappable onTap={this.handleTapEvent}>
-        <div className="content">
-          {this.props.debug ? (
-            <div>
-              <PageDbg title="prev" page={this.props.history.prevPage} />
-              <PageDbg title="curr" page={this.props.history.currPage} />
-              <PageDbg title="next" page={this.props.history.nextPage} />
-              <p>
-                from: {this.state.currIdx} - to: {this.state.currIdx + 1}
-              </p>
-            </div>
-          ) : null}
+      <>
+        <Tappable onTap={this.handleTapEvent}>
+          <div className="content">
+            {this.props.debug ? (
+              <div>
+                <PageDbg title="prev" page={this.props.history.prevPage} />
+                <PageDbg title="curr" page={this.props.history.currPage} />
+                <PageDbg title="next" page={this.props.history.nextPage} />
+                <p>
+                  from: {this.state.currIdx} - to: {this.state.currIdx + 1}
+                </p>
+              </div>
+            ) : null}
 
-          {this.renderText()}
-        </div>
-      </Tappable>
+            {this.renderText()}
+          </div>
+        </Tappable>
+        <p
+          className="help"
+          data-place="left"
+          data-type="dark"
+          data-multiline="true"
+          ref="help"
+          data-tip="raak scherm aan <br/> spatie - links - rechts <br/> ga naar (e)inde"
+        >
+          ?
+        </p>
+        <ReactTooltip />
+      </>
     );
   }
 
   handleTapEvent(e) {
     this.handlePressPlayPause();
+    ReactTooltip.hide(findDOMNode(this.refs.help));
   }
   handleKeyDown(e) {
     if (e.keyCode === 39) {
