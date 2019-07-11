@@ -3,6 +3,8 @@ import Tappable from "react-tappable/lib/Tappable";
 import Loader from "react-loader-spinner";
 import { findDOMNode } from "react-dom";
 import ReactTooltip from "react-tooltip";
+import moment from "moment";
+import "moment/locale/nl-be";
 
 import { treeDiff, simpleSplit, ADDED, REMOVED } from "./differ";
 
@@ -173,8 +175,18 @@ export default class HistoryView extends React.Component {
       Math.min(this.props.history.commits.length - 1, this.state.currIdx + 1)
     );
 
+    let dt = this.props.history.commits[Math.max(0, this.state.currIdx)].date;
+
+    moment.locale();
     return (
       <div className="container">
+        <div className="timestamp">
+          {moment(dt)
+            .local()
+            .locale("nl-be")
+            .format("DD/MM/YYYY - H:mm:ss ")}
+        </div>
+
         {this.props.showTitle && this.props.title ? (
           <h1 className="not-in-diff">{this.props.title}</h1>
         ) : null}
