@@ -34,7 +34,9 @@ function App({ history, showEpitaph }) {
       <p
         className="help"
         data-place="left"
-        data-tip="raak scherm aan / spatie - links - rechts"
+        data-type="opaque"
+        data-multiline="true"
+        data-tip="raak scherm aan <br/> spatie - links - rechts <br/> ga naar (e)inde"
       >
         ?
       </p>

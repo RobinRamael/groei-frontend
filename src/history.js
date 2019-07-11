@@ -112,7 +112,7 @@ export default class HistoryView extends React.Component {
     super(props);
     this.state = {
       currIdx: this.props.startAt,
-      loading: true,
+      initializing: true,
       goingForward: true,
       autoPlaying: this.props.autoPlay
     };
@@ -133,7 +133,7 @@ export default class HistoryView extends React.Component {
       later(2000)
     ]).then(() => {
       this.setState({
-        loading: false,
+        initializing: false,
         starting: true,
         intervalId: intervalId
       });
@@ -189,7 +189,7 @@ export default class HistoryView extends React.Component {
 
   render() {
     if (this.props.showEpitaph) {
-      if (this.state.loading) {
+      if (this.state.initializing) {
         return (
           <div className="content">
             alles mengt met elkaar <br /> maar heel traag <br /> – marwin vos
@@ -207,7 +207,9 @@ export default class HistoryView extends React.Component {
           </div>
         );
       }
-    } else if (this.state.loading) {
+    }
+
+    if (this.state.loading) {
       return (
         <div className="loader">
           <Loader type="Rings" color="#ffffff" height={80} width={80} />
@@ -245,12 +247,25 @@ export default class HistoryView extends React.Component {
     } else if (e.keyCode === 37) {
       this.pause();
       this.previousSlide();
-    } else if (e.keyCode === 69 || e.keyCode === 32) {
+    } else if (e.keyCode === 32) {
       e.preventDefault();
       this.handlePressPlayPause();
+    } else if (e.keyCode === 69) {
+      this.gotoSlide(this.props.history.commits.length - 1);
+      this.pause();
+      e.preventDefault();
     }
   }
 
+  gotoSlide(idx) {
+    this.setState({ loading: true });
+    this.props.history.ensureIndex(idx).then(() => {
+      this.setState({
+        currIdx: idx,
+        loading: false
+      });
+    });
+  }
   previousSlide() {
     if (this.state.currIdx > 0) {
       this.setState({ currIdx: this.state.currIdx - 1, goingForward: false });
