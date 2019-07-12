@@ -30,6 +30,7 @@ function App({ history, showEpitaph }) {
         showEpitaph={poemName === "hethaltingprobleem"}
         title={title}
         showTitle={poemName === "hethaltingprobleem"}
+        tapControlWidth={0.2}
       />
     </React.Fragment>
   );

@@ -48,14 +48,6 @@ h1.not-in-diff {
     color: red;
 }
 
-@media(max-width: 1000px) {
-    .content {
-        margin: 3em auto;
-        width: 90%;
-        font-size: calc(8px + 6 * ((100vw - 320px) / 680))
-    }
-}
-
 
 #root {
     height: 100%;
@@ -75,11 +67,30 @@ h1.not-in-diff {
     background-color: rgb(1, 22, 39);
 }
 
-.timestamp {
+.top-bar {
     position: fixed;
     top: 0;
     right: 0;
     padding: 10px 30px 5px 5px;
+    width: 100%;
+    text-align: right;
+    background-color: rgb(1, 22, 39);
+}
+
+.controls-button {
+    padding-left: 10px;
 
 }
 
+
+@media(max-width: 1000px) {
+    #root {
+        font-size: calc(8px + 6 * ((100vw - 320px) / 680))
+    }
+
+    .content {
+        margin: 3em auto;
+        width: 90%;
+    }
+
+}

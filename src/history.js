@@ -1,10 +1,16 @@
 import React from "react";
-import Tappable from "react-tappable/lib/Tappable";
 import Loader from "react-loader-spinner";
 import { findDOMNode } from "react-dom";
 import ReactTooltip from "react-tooltip";
 import moment from "moment";
 import "moment/locale/nl-be";
+import {
+  faPlay,
+  faPause,
+  faChevronRight,
+  faChevronLeft
+} from "@fortawesome/free-solid-svg-icons";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 
 import { treeDiff, simpleSplit, ADDED, REMOVED } from "./differ";
 
@@ -121,10 +127,14 @@ export default class HistoryView extends React.Component {
       initializing: true,
       loading: true,
       goingForward: true,
-      autoPlaying: this.props.autoPlay
+      autoPlaying: this.props.autoPlay,
+      tapped: null
     };
     this.handleKeyDown = this.handleKeyDown.bind(this);
     this.handleTapEvent = this.handleTapEvent.bind(this);
+    this.handleNextClick = this.handleNextClick.bind(this);
+    this.handlePreviousClick = this.handlePreviousClick.bind(this);
+    this.handlePlayPauseClick = this.handlePlayPauseClick.bind(this);
   }
 
   componentDidMount() {
@@ -179,18 +189,8 @@ export default class HistoryView extends React.Component {
       Math.min(this.props.history.commits.length - 1, this.state.currIdx + 1)
     );
 
-    let dt = this.props.history.commits[Math.max(0, this.state.currIdx)].date;
-
-    moment.locale();
     return (
       <div className="container">
-        <div className="timestamp">
-          {moment(dt)
-            .local()
-            .locale("nl-be")
-            .format("DD/MM/YYYY - H:mm:ss ")}
-        </div>
-
         {this.props.showTitle && this.props.title ? (
           <h1 className="not-in-diff">{this.props.title}</h1>
         ) : null}
@@ -235,24 +235,56 @@ export default class HistoryView extends React.Component {
       );
     }
 
+    let dt = this.props.history.commits[Math.max(0, this.state.currIdx)].date;
+
     return (
       <>
-        <Tappable onTap={this.handleTapEvent}>
-          <div className="content">
-            {this.props.debug ? (
-              <div>
-                <PageDbg title="prev" page={this.props.history.prevPage} />
-                <PageDbg title="curr" page={this.props.history.currPage} />
-                <PageDbg title="next" page={this.props.history.nextPage} />
-                <p>
-                  from: {this.state.currIdx} - to: {this.state.currIdx + 1}
-                </p>
-              </div>
-            ) : null}
+        <div className="top-bar">
+          <span>{this.state.tapped}</span>
+          <span className="timestamp">
+            {moment(dt)
+              .local()
+              .locale("nl-be")
+              .format("DD/MM/YYYY - H:mm:ss ")}
+          </span>
+          <span className="controls">
+            <span
+              className="controls-button controls-left"
+              onClick={this.handlePreviousClick}
+            >
+              <FontAwesomeIcon icon={faChevronLeft} />
+            </span>
+            <span
+              className="controls-button controls-play-pause"
+              onClick={this.handlePlayPauseClick}
+            >
+              <FontAwesomeIcon
+                icon={this.state.autoPlaying ? faPause : faPlay}
+              />
+            </span>
+            <span
+              className="controls-button controls-right"
+              onClick={this.handleNextClick}
+            >
+              <FontAwesomeIcon icon={faChevronRight} />
+            </span>
+          </span>
+        </div>
 
-            {this.renderText()}
-          </div>
-        </Tappable>
+        <div className="content" onClick={this.handleTapEvent}>
+          {this.props.debug ? (
+            <div>
+              <PageDbg title="prev" page={this.props.history.prevPage} />
+              <PageDbg title="curr" page={this.props.history.currPage} />
+              <PageDbg title="next" page={this.props.history.nextPage} />
+              <p>
+                from: {this.state.currIdx} - to: {this.state.currIdx + 1}
+              </p>
+            </div>
+          ) : null}
+
+          {this.renderText()}
+        </div>
         <p
           className="help"
           data-place="left"
@@ -269,7 +301,16 @@ export default class HistoryView extends React.Component {
   }
 
   handleTapEvent(e) {
-    this.handlePressPlayPause();
+    let widthPercent = e.clientX / window.innerWidth;
+
+    if (widthPercent < this.props.tapControlWidth) {
+      this.previousSlide();
+    } else if (widthPercent > 1 - this.props.tapControlWidth) {
+      this.nextSlide();
+    } else {
+      this.handlePressPlayPause();
+    }
+
     ReactTooltip.hide(findDOMNode(this.refs.help));
   }
   handleKeyDown(e) {
@@ -310,5 +351,20 @@ export default class HistoryView extends React.Component {
     } else {
       this.pause();
     }
+  }
+
+  handleNextClick(e) {
+    this.nextSlide();
+    e.preventDefault();
+  }
+
+  handlePreviousClick(e) {
+    this.previousSlide();
+    e.preventDefault();
+  }
+
+  handlePlayPauseClick(e) {
+    this.handlePressPlayPause();
+    e.preventDefault();
   }
 }
