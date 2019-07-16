@@ -355,17 +355,20 @@ export default class HistoryView extends React.Component {
     e.preventDefault();
     this.pause();
     this.nextSlide();
+    return false;
   }
 
   handlePreviousClick(e) {
     e.preventDefault();
     this.pause();
     this.previousSlide();
+    return false;
   }
 
   handlePlayPauseClick(e) {
     e.preventDefault();
     this.handlePressPlayPause();
+    return false;
   }
 
   timer() {
