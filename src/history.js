@@ -346,7 +346,7 @@ export default class HistoryView extends React.Component {
     }
   }
 
-  gotoSlide(idx) {
+  loadSlide(idx) {
     this.setState({ loading: true });
     return this.props.history.ensureIndex(idx).then(() => {
       this.setState({
@@ -355,28 +355,48 @@ export default class HistoryView extends React.Component {
       });
     });
   }
+
+  gotoSlide(idx) {
+    if (this.props.history.hasIndex(idx)) {
+      this.setState({ currIdx: idx });
+    } else {
+      let wasPlaying = this.state.autoPlaying;
+      this.pause();
+      this.props.history.ensureIndex(idx).then(() => {
+        this.setState({
+          currIdx: idx
+        });
+        if (wasPlaying) {
+          this.play();
+        }
+      });
+    }
+  }
+
   previousSlide() {
     if (this.state.currIdx > 0) {
-      this.setState({ currIdx: this.state.currIdx - 1, goingForward: false });
+      this.gotoSlide(this.state.currIdx - 1);
+      this.setState({ goingForward: false });
     }
   }
 
   nextSlide() {
     if (this.state.currIdx < this.props.history.commits.length - 1) {
-      this.setState({ currIdx: this.state.currIdx + 1, goingForward: true });
+      this.gotoSlide(this.state.currIdx + 1);
+      this.setState({ goingForward: true });
     } else {
       this.pause();
     }
   }
 
   lastSlide() {
-    this.gotoSlide(this.props.history.commits.length - 1);
+    this.loadSlide(this.props.history.commits.length - 1);
     this.pause();
   }
 
   firstSlide() {
     this.pause();
-    this.gotoSlide(0).then(() => {
+    this.loadSlide(0).then(() => {
       this.play();
     });
   }

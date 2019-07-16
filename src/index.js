@@ -66,7 +66,7 @@ class HistoryPage {
 }
 
 class History {
-  constructor(poemName, commits, startAt = 0, pageSize = 100, bound = 25) {
+  constructor(poemName, commits, startAt = 0, pageSize = 100, bound = 50) {
     this.poemName = poemName;
     this.commits = commits;
     this.pageSize = pageSize;
@@ -107,6 +107,10 @@ class History {
       this.nextPage.load(),
       this.prevPage.load()
     ]);
+  }
+
+  hasIndex(idx) {
+    return this.prevPage.start <= idx && idx < this.nextPage.end;
   }
 
   shiftWindowTo(idx) {
