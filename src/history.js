@@ -79,7 +79,7 @@ function ParagraphView(props) {
 
 function Poem(props) {
   return (
-    <div className="diff container">
+    <div className="diff">
       {withUniqueKeys(props.diff).map(par => (
         <ParagraphView
           paragraph={par}
@@ -188,7 +188,9 @@ export default class HistoryView extends React.Component {
       if (this.state.initializing) {
         return (
           <div className="content">
-            alles mengt met elkaar <br /> maar heel traag <br /> – marwin vos
+            <div className="container">
+              alles mengt met elkaar <br /> maar heel traag <br /> – marwin vos
+            </div>
           </div>
         );
       }
@@ -308,7 +310,6 @@ export default class HistoryView extends React.Component {
     } else {
       this.handlePressPlayPause();
     }
-    this.setState({ tapped: widthPercent });
   }
   handleKeyDown(e) {
     if (e.keyCode === 39) {

@@ -32,8 +32,15 @@ h1.not-in-diff {
 }
 
 .content {
-    width: 60%;
-    margin: 9em auto;
+    width: 100%;
+    padding: 5em 9em;
+}
+
+.container {
+    margin-top: 0;
+    margin-left: 9em;
+    margin-right: 0;
+    margin-bottom: 0;
 }
 
 .paragraph {
@@ -131,8 +138,12 @@ h1.not-in-diff {
     }
 
     .content {
-        margin: 3em auto;
+        padding: 3em 3em;
         width: 90%;
+    }
+
+    .container {
+        margin: 0em auto;
     }
 
 }
