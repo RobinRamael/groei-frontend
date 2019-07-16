@@ -75,11 +75,53 @@ h1.not-in-diff {
     width: 100%;
     text-align: right;
     background-color: rgb(1, 22, 39);
+    outline-style: none;
 }
 
 .controls-button {
     padding-left: 10px;
 
+}
+
+.overlay {
+    position: fixed;
+    top: 0;
+    right: 0;
+    width: 100%;
+    height: 100%;
+    background-color: black;
+    opacity: 0.5;
+    z-index: 100;
+    font-size: 50px;
+}
+
+
+.overlay > div {
+
+  display: flex;
+  height: 100vh;
+  justify-content: center;
+  align-items: center;
+}
+
+.overlay-left {
+    width: calc(20% - 2px);
+    height: 100%;
+    float: left;
+    border-right: 2px dashed;
+}
+
+.overlay-center {
+    width: calc(60% - 2px);
+    height: 100%;
+    float: left;
+    border-right: 2px dashed;
+}
+
+.overlay-right {
+    width: 20%;
+    height: 100%;
+    float: right;
 }
 
 

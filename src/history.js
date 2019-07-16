@@ -113,6 +113,22 @@ function PageDbg(props) {
   );
 }
 
+function Overlay(props) {
+  return (
+    <div className="overlay" onClick={props.handleClick}>
+      <div className="overlay-left">
+        <FontAwesomeIcon icon={faChevronLeft} className="overlay-button" />{" "}
+      </div>
+      <div className="overlay-center">
+        <FontAwesomeIcon icon={faPause} className="overlay-button" />{" "}
+      </div>
+      <div className="overlay-right">
+        <FontAwesomeIcon icon={faChevronRight} className="overlay-button" />{" "}
+      </div>
+    </div>
+  );
+}
+
 function later(delay) {
   return new Promise(function(resolve) {
     setTimeout(resolve, delay);
@@ -135,6 +151,8 @@ export default class HistoryView extends React.Component {
     this.handleNextClick = this.handleNextClick.bind(this);
     this.handlePreviousClick = this.handlePreviousClick.bind(this);
     this.handlePlayPauseClick = this.handlePlayPauseClick.bind(this);
+    this.handleOverlayClick = this.handleOverlayClick.bind(this);
+    this.handleHelpClick = this.handleHelpClick.bind(this);
   }
 
   componentDidMount() {
@@ -163,46 +181,6 @@ export default class HistoryView extends React.Component {
 
   componentWillUnmount() {
     clearInterval(this.state.intervalId);
-  }
-
-  timer() {
-    this.nextSlide();
-  }
-
-  handlePressPlayPause() {
-    this.state.autoPlaying ? this.pause() : this.play();
-  }
-
-  pause() {
-    this.setState({ autoPlaying: false });
-    clearInterval(this.state.intervalId);
-  }
-
-  play() {
-    let intervalId = setInterval(this.timer.bind(this), this.props.delay);
-    this.setState({ intervalId: intervalId, autoPlaying: true });
-  }
-
-  renderText() {
-    let from = this.props.history.getCommit(Math.max(0, this.state.currIdx));
-    let to = this.props.history.getCommit(
-      Math.min(this.props.history.commits.length - 1, this.state.currIdx + 1)
-    );
-
-    return (
-      <div className="container">
-        {this.props.showTitle && this.props.title ? (
-          <h1 className="not-in-diff">{this.props.title}</h1>
-        ) : null}
-        {this.props.debug ? <SimpleView text={from} /> : null}
-        <DiffViewer
-          from={from.trimStart()}
-          to={to.trimStart()}
-          goingForward={this.state.goingForward}
-        />
-        {this.props.debug ? <SimpleView text={to} /> : null}
-      </div>
-    );
   }
 
   render() {
@@ -235,10 +213,21 @@ export default class HistoryView extends React.Component {
       );
     }
 
+    let from = this.props.history
+      .getCommit(Math.max(0, this.state.currIdx))
+      .trimStart();
+    let to = this.props.history
+      .getCommit(
+        Math.min(this.props.history.commits.length - 1, this.state.currIdx + 1)
+      )
+      .trimStart();
     let dt = this.props.history.commits[Math.max(0, this.state.currIdx)].date;
 
     return (
       <>
+        {this.state.showOverlay ? (
+          <Overlay handleClick={this.handleOverlayClick} />
+        ) : null}
         <div className="top-bar">
           <span>{this.state.tapped}</span>
           <span className="timestamp">
@@ -282,8 +271,18 @@ export default class HistoryView extends React.Component {
               </p>
             </div>
           ) : null}
-
-          {this.renderText()}
+          <div className="container">
+            {this.props.showTitle && this.props.title ? (
+              <h1 className="not-in-diff">{this.props.title}</h1>
+            ) : null}
+            {this.props.debug ? <SimpleView text={from} /> : null}
+            <DiffViewer
+              from={from}
+              to={to}
+              goingForward={this.state.goingForward}
+            />
+            {this.props.debug ? <SimpleView text={to} /> : null}
+          </div>
         </div>
         <p
           className="help"
@@ -291,11 +290,10 @@ export default class HistoryView extends React.Component {
           data-type="dark"
           data-multiline="true"
           ref="help"
-          data-tip="raak scherm aan <br/> spatie - links - rechts <br/> ga naar (e)inde"
+          onClick={this.handleHelpClick}
         >
           ?
         </p>
-        <ReactTooltip />
       </>
     );
   }
@@ -310,8 +308,7 @@ export default class HistoryView extends React.Component {
     } else {
       this.handlePressPlayPause();
     }
-
-    ReactTooltip.hide(findDOMNode(this.refs.help));
+    this.setState({ tapped: widthPercent });
   }
   handleKeyDown(e) {
     if (e.keyCode === 39) {
@@ -354,17 +351,45 @@ export default class HistoryView extends React.Component {
   }
 
   handleNextClick(e) {
-    this.nextSlide();
     e.preventDefault();
+    this.pause();
+    this.nextSlide();
   }
 
   handlePreviousClick(e) {
-    this.previousSlide();
     e.preventDefault();
+    this.pause();
+    this.previousSlide();
   }
 
   handlePlayPauseClick(e) {
-    this.handlePressPlayPause();
     e.preventDefault();
+    this.handlePressPlayPause();
+  }
+
+  timer() {
+    this.nextSlide();
+  }
+
+  handlePressPlayPause(e) {
+    this.state.autoPlaying ? this.pause() : this.play();
+  }
+
+  pause() {
+    this.setState({ autoPlaying: false });
+    clearInterval(this.state.intervalId);
+  }
+
+  play() {
+    let intervalId = setInterval(this.timer.bind(this), this.props.delay);
+    this.setState({ intervalId: intervalId, autoPlaying: true });
+  }
+
+  handleOverlayClick(e) {
+    this.setState({ showOverlay: false });
+  }
+
+  handleHelpClick(e) {
+    this.setState({ showOverlay: true });
   }
 }
