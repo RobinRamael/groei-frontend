@@ -7,8 +7,10 @@ import "moment/locale/nl-be";
 import {
   faPlay,
   faPause,
-  faChevronRight,
-  faChevronLeft
+  faAngleRight,
+  faAngleLeft,
+  faAngleDoubleRight,
+  faAngleDoubleLeft
 } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 
@@ -117,13 +119,13 @@ function Overlay(props) {
   return (
     <div className="overlay" onClick={props.handleClick}>
       <div className="overlay-left">
-        <FontAwesomeIcon icon={faChevronLeft} className="overlay-button" />{" "}
+        <FontAwesomeIcon icon={faAngleLeft} className="overlay-button" />{" "}
       </div>
       <div className="overlay-center">
         <FontAwesomeIcon icon={faPause} className="overlay-button" />{" "}
       </div>
       <div className="overlay-right">
-        <FontAwesomeIcon icon={faChevronRight} className="overlay-button" />{" "}
+        <FontAwesomeIcon icon={faAngleRight} className="overlay-button" />{" "}
       </div>
     </div>
   );
@@ -146,6 +148,7 @@ export default class HistoryView extends React.Component {
       autoPlaying: this.props.autoPlay,
       tapped: null
     };
+    this.timer = this.timer.bind(this);
     this.handleKeyDown = this.handleKeyDown.bind(this);
     this.handleTapEvent = this.handleTapEvent.bind(this);
     this.handleNextClick = this.handleNextClick.bind(this);
@@ -153,15 +156,17 @@ export default class HistoryView extends React.Component {
     this.handlePlayPauseClick = this.handlePlayPauseClick.bind(this);
     this.handleOverlayClick = this.handleOverlayClick.bind(this);
     this.handleHelpClick = this.handleHelpClick.bind(this);
+    this.handleLastSlideClick = this.handleLastSlideClick.bind(this);
+    this.handleFirstSlideClick = this.handleFirstSlideClick.bind(this);
   }
 
   componentDidMount() {
     document.addEventListener("keydown", this.handleKeyDown);
     document.title = this.props.title + "- robin ramael";
 
-    var intervalId = this.state.autoPlaying
-      ? setInterval(this.timer.bind(this), this.props.delay)
-      : null;
+    if (this.props.autoPlay) {
+      this.play();
+    }
 
     Promise.all([
       this.props.history.ensureIndex(this.props.startAt),
@@ -170,8 +175,7 @@ export default class HistoryView extends React.Component {
       this.setState({
         initializing: false,
         loading: false,
-        starting: true,
-        intervalId: intervalId
+        starting: true
       });
       later(700).then(() => {
         this.setState({ starting: false });
@@ -240,10 +244,16 @@ export default class HistoryView extends React.Component {
           </span>
           <span className="controls">
             <span
+              className="controls-button controls-start"
+              onClick={this.handleFirstSlideClick}
+            >
+              <FontAwesomeIcon icon={faAngleDoubleLeft} />
+            </span>
+            <span
               className="controls-button controls-left"
               onClick={this.handlePreviousClick}
             >
-              <FontAwesomeIcon icon={faChevronLeft} />
+              <FontAwesomeIcon icon={faAngleLeft} />
             </span>
             <span
               className="controls-button controls-play-pause"
@@ -257,7 +267,13 @@ export default class HistoryView extends React.Component {
               className="controls-button controls-right"
               onClick={this.handleNextClick}
             >
-              <FontAwesomeIcon icon={faChevronRight} />
+              <FontAwesomeIcon icon={faAngleRight} />
+            </span>
+            <span
+              className="controls-button controls-end"
+              onClick={this.handleLastSlideClick}
+            >
+              <FontAwesomeIcon icon={faAngleDoubleRight} />
             </span>
           </span>
         </div>
@@ -322,15 +338,17 @@ export default class HistoryView extends React.Component {
       e.preventDefault();
       this.handlePressPlayPause();
     } else if (e.keyCode === 69) {
-      this.gotoSlide(this.props.history.commits.length - 1);
-      this.pause();
+      this.lastSlide();
+      e.preventDefault();
+    } else if (e.keyCode === 66) {
+      this.firstSlide();
       e.preventDefault();
     }
   }
 
   gotoSlide(idx) {
     this.setState({ loading: true });
-    this.props.history.ensureIndex(idx).then(() => {
+    return this.props.history.ensureIndex(idx).then(() => {
       this.setState({
         currIdx: idx,
         loading: false
@@ -349,6 +367,18 @@ export default class HistoryView extends React.Component {
     } else {
       this.pause();
     }
+  }
+
+  lastSlide() {
+    this.gotoSlide(this.props.history.commits.length - 1);
+    this.pause();
+  }
+
+  firstSlide() {
+    this.pause();
+    this.gotoSlide(0).then(() => {
+      this.play();
+    });
   }
 
   handleNextClick(e) {
@@ -371,6 +401,18 @@ export default class HistoryView extends React.Component {
     return false;
   }
 
+  handleLastSlideClick(e) {
+    e.preventDefault();
+    this.lastSlide();
+    return false;
+  }
+
+  handleFirstSlideClick(e) {
+    e.preventDefault();
+    this.firstSlide();
+    return false;
+  }
+
   timer() {
     this.nextSlide();
   }
@@ -385,7 +427,7 @@ export default class HistoryView extends React.Component {
   }
 
   play() {
-    let intervalId = setInterval(this.timer.bind(this), this.props.delay);
+    let intervalId = setInterval(this.timer, this.props.delay);
     this.setState({ intervalId: intervalId, autoPlaying: true });
   }
 
