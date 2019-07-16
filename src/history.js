@@ -1,7 +1,5 @@
 import React from "react";
 import Loader from "react-loader-spinner";
-import { findDOMNode } from "react-dom";
-import ReactTooltip from "react-tooltip";
 import moment from "moment";
 import "moment/locale/nl-be";
 import {
