@@ -160,7 +160,7 @@ export default class HistoryView extends React.Component {
 
   componentDidMount() {
     document.addEventListener("keydown", this.handleKeyDown);
-    document.title = this.props.title + "- robin ramael";
+    document.title = this.props.title + " - robin ramael";
 
     if (this.props.autoPlay) {
       this.play();
