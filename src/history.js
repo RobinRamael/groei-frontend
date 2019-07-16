@@ -219,13 +219,13 @@ export default class HistoryView extends React.Component {
 
     let from = this.props.history.getCommit(Math.max(0, this.state.currIdx));
 
-    from = from ? from.trimStart() : "";
+    from = typeof from === "string" ? from.trimStart() : "";
 
     let to = this.props.history.getCommit(
       Math.min(this.props.history.commits.length - 1, this.state.currIdx + 1)
     );
 
-    to = to ? to.trimStart() : "";
+    to = typeof to === "string" ? to.trimStart() : "";
 
     let dt = this.props.history.commits[Math.max(0, this.state.currIdx)].date;
 
