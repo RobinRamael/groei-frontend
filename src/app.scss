@@ -4,20 +4,17 @@
 html {
     height: 100%;
 }
+
 body {
     padding: 0;
     height: 100%;
     font-family: 'Roboto Slab', serif;
-    line-height: 1.4;
+    line-height: 1.6;
     font-size: 14px;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
     background-color: rgb(1, 22, 39);
     color: rgb(214, 222, 235);
-}
-
-.Tappable-inactive, .Tappable-active {
-    cursor: unset !important;
 }
 
 h1.not-in-diff {
@@ -44,7 +41,7 @@ h1.not-in-diff {
 }
 
 .paragraph {
-    margin-bottom: 1em;
+    margin-bottom: 1.6em;
 }
 
 .added {
