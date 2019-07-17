@@ -8,11 +8,13 @@ const root = document.getElementById("root");
 const message = document.getElementById("message");
 
 async function getContent(poemName, sha) {
-  const contentResponse = await fetch(
-    process.env.PUBLIC_URL + `/versions/${poemName}/${sha}.json`
-  );
+  let url = process.env.PUBLIC_URL + `/versions/${poemName}/${sha}.json`;
+  const contentResponse = await fetch(url);
 
   if (!contentResponse.ok) {
+    Sentry.captureMessage(`Failed to fetch ${url}`, {
+      extra: { reason: contentResponse }
+    });
     throw contentResponse;
   }
   const contentJson = await contentResponse.json();
@@ -195,6 +197,7 @@ Promise.all([getHistory(), import("./app")])
     app.render(history, root);
   })
   .catch(error => {
-    console.error(error);
+    console.log(error);
+    Sentry.captureMessage("Global error", { extra: { reason: error.reason } });
     message.innerHTML = `<p>Unexpected error. Check the console.</p>`;
   });
