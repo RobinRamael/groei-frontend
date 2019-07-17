@@ -29,7 +29,7 @@ h1.not-in-diff {
 }
 
 .content {
-    width: 100%;
+    width: calc(100% - 2*9em);
     padding: 5em 9em;
 }
 
