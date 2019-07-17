@@ -87,6 +87,15 @@ h1.not-in-diff {
 
 }
 
+.about {
+    padding-right: 20px;
+
+    a, a:hover, a:visited {
+        color: rgb(214, 222, 235);
+        text-decoration: none;
+    }
+}
+
 .overlay {
     position: fixed;
     top: 0;

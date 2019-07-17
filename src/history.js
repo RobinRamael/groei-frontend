@@ -236,6 +236,9 @@ export default class HistoryView extends React.Component {
         ) : null}
         <div className="top-bar">
           <span>{this.state.tapped}</span>
+          <span class="about">
+            <a href="/about/">metatekst</a>
+          </span>
           <span className="timestamp">
             {moment(dt)
               .local()
