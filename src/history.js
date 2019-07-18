@@ -235,17 +235,7 @@ export default class HistoryView extends React.Component {
           <Overlay handleClick={this.handleOverlayClick} />
         ) : null}
         <div className="top-bar">
-          <span>{this.state.tapped}</span>
-          <span class="about">
-            <a href="/about/">metatekst</a>
-          </span>
-          <span className="timestamp">
-            {moment(dt)
-              .local()
-              .locale("nl-be")
-              .format("DD/MM/YYYY - H:mm:ss ")}
-          </span>
-          <span className="controls">
+          <div className="controls">
             <span
               className="controls-button controls-start"
               onClick={this.handleFirstSlideClick}
@@ -278,7 +268,16 @@ export default class HistoryView extends React.Component {
             >
               <FontAwesomeIcon icon={faAngleDoubleRight} />
             </span>
-          </span>
+          </div>
+          <div className="timestamp">
+            {moment(dt)
+              .local()
+              .locale("nl-be")
+              .format("DD/MM/YYYY - H:mm:ss ")}
+          </div>
+          <div class="about">
+            <a href="/about/">metatekst</a>
+          </div>
         </div>
 
         <div className="content" onClick={this.handleTapEvent}>

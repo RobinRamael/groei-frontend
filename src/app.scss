@@ -73,13 +73,19 @@ h1.not-in-diff {
 
 .top-bar {
     position: fixed;
-    top: 0;
     right: 0;
-    padding: 10px 30px 5px 5px;
+    top: 0;
+    padding: 1em 0;
     width: 100%;
     text-align: right;
     background-color: rgb(1, 22, 39);
     outline-style: none;
+}
+
+
+.controls {
+    padding-left: 1em;
+    float: left;
 }
 
 .controls-button {
@@ -87,8 +93,15 @@ h1.not-in-diff {
 
 }
 
+.timestamp {
+    padding-left: 2em;
+    float: left;
+}
+
 .about {
-    padding-right: 20px;
+    padding: 0 20px ;
+    float: right;
+
 
     a, a:hover, a:visited {
         color: rgb(214, 222, 235);
@@ -149,7 +162,26 @@ h1.not-in-diff {
     }
 
     .container {
-        margin: 0em auto;
+        margin: 6em auto;
+    }
+
+    .top-bar {
+        padding: 2em 0;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+    }
+
+    .timestamp {
+        padding-left: 0;
+    }
+
+    .about {
+        padding-left: 0;
+    }
+
+    .controls {
+        font-size: 20px;
     }
 
 }
