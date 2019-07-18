@@ -7428,10 +7428,6 @@ react-simple-loader@^1.0.0:
   version "1.0.0"
   resolved "https://registry.yarnpkg.com/react-simple-loader/-/react-simple-loader-1.0.0.tgz#64d221a316ddcd5c1eccc744a69089fb7cf3ebf6"
 
-react-tappable@^1.0.4:
-  version "1.0.4"
-  resolved "https://registry.yarnpkg.com/react-tappable/-/react-tappable-1.0.4.tgz#282b7b3dc25e6170b55d1ea33d986b7624a19fb9"
-
 react-tooltip@^3.10.0:
   version "3.10.0"
   resolved "https://registry.yarnpkg.com/react-tooltip/-/react-tooltip-3.10.0.tgz#268b5ef519fd8a1369288d1f086f42c90d5da7ef"
