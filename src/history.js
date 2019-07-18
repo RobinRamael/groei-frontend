@@ -11,6 +11,7 @@ import {
   faAngleDoubleLeft
 } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import * as Sentry from "@sentry/browser";
 
 import { treeDiff, simpleSplit, ADDED, REMOVED } from "./differ";
 
@@ -228,6 +229,11 @@ export default class HistoryView extends React.Component {
     to = typeof to === "string" ? to.trimStart() : "";
 
     let dt = this.props.history.commits[Math.max(0, this.state.currIdx)].date;
+
+    if (this.state.currIdx % 250 === 0) {
+      let msg = `Someone got to ${this.state.currIdx} :)`;
+      Sentry.captureMessage(msg, "info");
+    }
 
     return (
       <>
