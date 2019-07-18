@@ -304,16 +304,9 @@ export default class HistoryView extends React.Component {
             {this.props.debug ? <SimpleView text={to} /> : null}
           </div>
         </div>
-        <p
-          className="help"
-          data-place="left"
-          data-type="dark"
-          data-multiline="true"
-          ref="help"
-          onClick={this.handleHelpClick}
-        >
+        <div className="help" onClick={this.handleHelpClick}>
           ?
-        </p>
+        </div>
       </>
     );
   }

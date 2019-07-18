@@ -59,8 +59,9 @@ h1.not-in-diff {
 
 .help {
     position: fixed;
-    right: 20px;
-    bottom: 15px;
+    right: 0;
+    bottom: 0;
+    padding: 20px;
 }
 
 .multi-line {
