@@ -1,3 +1,5 @@
+import "react-app-polyfill/stable";
+import "whatwg-fetch";
 import * as Sentry from "@sentry/browser";
 
 Sentry.init({
